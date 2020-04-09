@@ -20,7 +20,7 @@ def create_mosaic_strip(images):
 #############################################################################
 # MAIN
 #############################################################################
-output_filename = "mosaic.jpg"
+output_filename = "../images/mosaic.png"
 
 filenames = os.listdir("data")
 images = []
