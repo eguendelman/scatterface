@@ -1,8 +1,9 @@
 var canvas = document.getElementById("my-canvas");
 var offCanvas = null;
+var offCanvasTarget = null;
 
 var SOURCE_ITEM_SIZE = 256;
-var NUM_DRAWN_ITEMS = 200;
+var NUM_DRAWN_ITEMS = 100;
 var DRAWN_ITEM_SIZE = 64;
 var DATASET_CONFIG_URL = "dataset.json"
 
@@ -11,8 +12,12 @@ var datasetConfig = null;
 function createOffscreenCanvas() 
 {
     offCanvas = document.createElement('canvas');
-    offCanvas.width = SOURCE_ITEM_SIZE;
-    offCanvas.height = SOURCE_ITEM_SIZE;
+    offCanvas.width = DRAWN_ITEM_SIZE;
+    offCanvas.height = DRAWN_ITEM_SIZE;
+
+    offCanvasTarget = document.createElement('canvas');
+    offCanvasTarget.width = DRAWN_ITEM_SIZE;
+    offCanvasTarget.height = DRAWN_ITEM_SIZE;
 }
 
 function getLocations1(width, height, n)
@@ -77,40 +82,26 @@ function drawItems()
     let ctx = canvas.getContext("2d");
 
     let sz = DRAWN_ITEM_SIZE;
-    let cx = sz/2;
-    let cy = sz/2;
-    let r1 = sz/3;
-    let r2 = sz/2;
-
-    var g1=ctx.createRadialGradient(cx, cy, r1, cx, cy, r2);
-    g1.addColorStop(0.00,"rgba(0,0,0,1.00)");
-    g1.addColorStop(0.50,"rgba(0,0,0,0.75)");
-    g1.addColorStop(1.00,"rgba(0,0,0,0.00)");
 
     let img = new Image();
     img.onload = function () {
         let numItems = img.width / SOURCE_ITEM_SIZE;
+        let targetPlacementIdx = Math.floor(NUM_DRAWN_ITEMS * Math.random());
         locs = getLocations(canvas.width, canvas.height, NUM_DRAWN_ITEMS);
         for(let i=0; i<NUM_DRAWN_ITEMS; i++)
         {
-            let itemIdx = Math.floor(Math.random() * numItems);
-
-            prepareOnComputeCanvas(img, itemIdx);
-
-            // locs.x/y represent the center, so we adjust for that
-            //
-            //
-            //
+            // locs.cx/cy represent the center, so we adjust for that
             let x = locs[i].cx - sz/2;
             let y = locs[i].cy - sz/2;
 
-            //ctx.fillStyle = g1;
-            //ctx.fillRect(x, y, sz, sz);
-
-            //ctx.globalCompositeOperation="source-over";
-            //ctx.drawImage(img, itemIdx*SOURCE_ITEM_SIZE, 0, SOURCE_ITEM_SIZE, SOURCE_ITEM_SIZE, x, y, sz, sz);
-            //ctx.globalCompositeOperation="source-over";
-            ctx.drawImage(offCanvas, x, y);
+            let sourceCanvas = offCanvas;
+            if (i == targetPlacementIdx) {
+                sourceCanvas = offCanvasTarget;
+            } else {
+                let itemIdx = Math.floor(Math.random() * numItems);
+                prepareOnComputeCanvas(img, itemIdx);
+            }
+            ctx.drawImage(sourceCanvas, x, y);
         }
     };
     img.src = 'images/mosaic.png';
@@ -126,12 +117,9 @@ function drawBackground()
 
     let img = new Image();
     img.onload = function () {
-        //ctx.globalAlpha = 0.4;
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        //ctx.globalAlpha = 1.0;
         drawItems();
     };
-    //img.src = 'images/bg1.jpg';
     img.src = datasetConfig.backgrounds[bgIdx].url;
 }
 
@@ -139,6 +127,36 @@ function generate()
 {
     drawBackground();
 }
+
+
+function readURL(input) 
+{
+    console.log(input);
+    console.log(input.files);
+
+    if (input.files && input.files[0])
+    {
+        var reader = new FileReader();
+        reader.onload = function(readerEvent)
+        {
+            var image = new Image();
+            image.onload = function(imageEvent)
+            {
+                // Resize the image
+                var canvas = document.getElementById("canvas2");
+                canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+                offCanvasTarget.getContext('2d').drawImage(image, 0, 0, offCanvasTarget.width, offCanvasTarget.height);
+                generate();
+            }
+            image.src = readerEvent.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+
+document.getElementById("file-input").addEventListener("change", (e) => { readURL(e.target); });
+
 
 fetch(DATASET_CONFIG_URL)
 .then(res => res.json())
