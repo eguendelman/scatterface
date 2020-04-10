@@ -7,7 +7,7 @@ var STORAGE_KEY_DIFFICULTY = "difficultyLevel";
 
 var SOURCE_ITEM_SIZE = 256;
 var DATASET_CONFIG_URL = "config/backgrounds.json"
-var ENLARGE_FACTOR = 1.5;
+var FACE_REGION_ENLARGE_FACTOR = 1.1;
 
 var BOTTOM_MARGIN = 64;
 
@@ -26,7 +26,8 @@ function getDrawnItemSize()
     let factor = 1;
     if (difficultyLevel == 1) { factor = 10; }
     else if (difficultyLevel == 2) { factor = 20; }
-    else if (difficultyLevel == 3) { factor = 30; }
+    else if (difficultyLevel == 3) { factor = 35; }
+    else if (difficultyLevel == 4) { factor = 45; }
     return canvas.width/factor;
 }
 
@@ -166,7 +167,7 @@ function createFalloff(ctx, sz)
 }
 
 
-function prepareOnComputeCanvas(img, itemIdx, dstCanvas)
+function prepareOnCompositorCanvasFromImage(img, itemIdx, dstCanvas)
 {
     let sz = dstCanvas.width;
     let ctx = dstCanvas.getContext("2d");
@@ -183,7 +184,7 @@ function prepareOnComputeCanvas(img, itemIdx, dstCanvas)
 }
 
 
-function prepareOnComputeCanvas2(srcCanvas, dstCanvas)
+function prepareOnCompositorCanvasFromCanvas(srcCanvas, dstCanvas)
 {
     let sz = dstCanvas.width;
     let ctx = dstCanvas.getContext("2d");
@@ -212,6 +213,8 @@ function drawItems()
     img.onload = function () {
         let numItems = img.width / SOURCE_ITEM_SIZE;
         let locs = getLocationsPoisson(canvas.width, canvas.height, sz);
+
+        // location at index `targetPlacementIdx` will be the target image
         let targetPlacementIdx = Math.floor(locs.length * Math.random());
         for(let i=0; i<locs.length; i++)
         {
@@ -220,10 +223,10 @@ function drawItems()
             let y = locs[i].cy - sz/2;
 
             if (i == targetPlacementIdx) {
-                prepareOnComputeCanvas2(targetCanvas, compositorCanvas);
+                prepareOnCompositorCanvasFromCanvas(targetCanvas, compositorCanvas);
             } else {
                 let itemIdx = Math.floor(Math.random() * numItems);
-                prepareOnComputeCanvas(img, itemIdx, compositorCanvas);
+                prepareOnCompositorCanvasFromImage(img, itemIdx, compositorCanvas);
             }
             ctx.drawImage(compositorCanvas, x, y);
         }
@@ -262,7 +265,7 @@ function readURL(input)
             var image = new Image();
             image.onload = function(imageEvent)
             {
-                let success = extractFace(image, targetCanvas, ENLARGE_FACTOR);
+                let success = extractFace(image, targetCanvas, FACE_REGION_ENLARGE_FACTOR);
                 if (success) {
                     saveToLocalStorage(targetCanvas);
                     targetChanged();

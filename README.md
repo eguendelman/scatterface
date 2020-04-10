@@ -18,9 +18,11 @@ See it live [here](https://eguendelman.github.io/scatterface/)
 * add credit line and links
 * check on mobile devices
 * if we create element without adding to DOM does it get garbage collected?
+* display count of how many faces are drawn
 
 ### Ideas for later...
 
+* ability to save/export as image
 * code refactor, more consistent use of async/then
 * gameification - e.g. play a series of images and use timer for scoring
 * allow search for multiple people in a single image
