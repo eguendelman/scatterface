@@ -4,16 +4,35 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/images/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/images/icons/favicon-16x16.png">
     <link rel="manifest" href="/site.webmanifest">
+
+
+    <!-- bootstrap -->
+    <link rel="stylesheet" href="css/thirdparty/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
   </head>
   <body>
-    <canvas id="test-canvas" width="2048" height="2048"></canvas>
-    <canvas id="my-canvas" width="1280" height="720"></canvas>
-    <canvas id="canvas2" width="256" height="256"></canvas>
 
-    <form runat="server">
-      <input type="file" id="file-input" />
-      <img id="blah" src="#" alt="your image" />
-    </form>
+    <div class="container-fluid">
+      <div class="row no-gutters">
+        <div class="col">
+          <canvas id="my-canvas"></canvas>
+        </div>
+      </div>
+      <div class="row no-gutters" style="height: 128px;">
+        <div class="col-12 col-md-5">
+          <label class="btn btn-default btn-primary w-100 h-100">Browse<input type="file" id="file-input" hidden></label>
+        </div>
+        <div class="col-12 col-md-2">
+          <canvas id="preview-canvas" class="w-100 h-100"></canvas>
+        </div>
+        <div class="col-12 col-md-5">
+          <button type="button" class="btn btn-primary w-100 h-100">Hi</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/thirdparty/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="js/thirdparty/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="js/thirdparty/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
 
     <script src="js/thirdparty/pico.js"></script>
     <script src="js/thirdparty/poisson-disc.js"></script>

@@ -6,10 +6,10 @@
 * row of buttons at bottom, for refresh, preview target image, etc.
 * add credit line and links
 * check on mobile devices
+* if we create element without adding to DOM does it get garbage collected?
 
 ## Ideas for later...
 
-* Poisson disc sampling for locations
 * additional datasets (e.g. Peppa Pig faces)
 * downselect distractor faces to those that are most similar to the target face ("hard mode")
 * nicer background removal (in place of radial gradient)

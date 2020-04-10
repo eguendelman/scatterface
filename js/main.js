@@ -1,34 +1,34 @@
 var canvas = document.getElementById("my-canvas");
 var offCanvas = null;
-var offCanvasTarget = null;
 
 var SOURCE_ITEM_SIZE = 256;
 var NUM_DRAWN_ITEMS = 100;
-var DRAWN_ITEM_SIZE = 32;
+var DRAWN_ITEM_SIZE = 100;
 var DATASET_CONFIG_URL = "dataset.json"
+var ENLARGE_FACTOR = 1.5;
+
+var BOTTOM_MARGIN = 128;
 
 var datasetConfig = null;
+
+var targetCanvas = document.createElement('canvas');
+
+function initLayout()
+{
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight - BOTTOM_MARGIN;
+
+    let el = document.getElementById("file-input");
+    if (el != null) {
+        el.addEventListener("change", (e) => { readURL(e.target); });
+    }
+}
 
 function createOffscreenCanvas() 
 {
     offCanvas = document.createElement('canvas');
     offCanvas.width = DRAWN_ITEM_SIZE;
     offCanvas.height = DRAWN_ITEM_SIZE;
-
-    offCanvasTarget = document.createElement('canvas');
-    offCanvasTarget.width = DRAWN_ITEM_SIZE;
-    offCanvasTarget.height = DRAWN_ITEM_SIZE;
-}
-
-function getLocations1(width, height, n)
-{
-    let locs = Array();
-    for (let i=0; i<n; i++) {
-        let cx = Math.round(Math.random() * width);
-        let cy = Math.round(Math.random() * height);
-        locs.push({cx: x, cy: y});
-    }
-    return locs
 }
 
 function getLocationsPoisson(width, height, spacing)
@@ -48,51 +48,55 @@ function getLocationsPoisson(width, height, spacing)
     return locs;
 }
 
-// Returns center locations
-function getLocations(width, height, n)
+
+function createFalloff(ctx, sz)
 {
-    let cellSize = 80;
-    let maxPerturb = 20;
-    let locs = Array();
-    for (let row=0; row<height/cellSize; row++)
-    {
-        for (let col=0; col<width/cellSize; col++)
-        {
-            let xp = maxPerturb * (2*Math.random() - 1);
-            let cx = (col+0.5) * cellSize + xp;
+    let cx = sz/2;
+    let cy = sz/2;
+    let r1 = Math.floor(0.3*sz);
+    let r2 = Math.floor(0.5*sz);
 
-            let yp = maxPerturb * (2*Math.random() - 1);
-            let cy = (row+0.5) * cellSize + yp;
+    var g = ctx.createRadialGradient(cx, cy, r1, cx, cy, r2);
+    g.addColorStop(0.00,"rgba(0,0,0,1.00)");
+    g.addColorStop(1.00,"rgba(0,0,0,0.00)");
 
-            locs.push({cx: cx, cy: cy});
-        }
-    }
-    return locs
+    return g;
 }
+
 
 function prepareOnComputeCanvas(img, itemIdx)
 {
-    let ctx = offCanvas.getContext("2d");
-
     let sz = DRAWN_ITEM_SIZE;
+    let ctx = offCanvas.getContext("2d");
     ctx.clearRect(0, 0, sz, sz);
 
-    let cx = sz/2;
-    let cy = sz/2;
-    let r1 = sz/3;
-    let r2 = sz/2;
+    let g = createFalloff(ctx, sz);
 
-    var g1=ctx.createRadialGradient(cx, cy, r1, cx, cy, r2);
-    g1.addColorStop(0.00,"rgba(0,0,0,1.00)");
-    g1.addColorStop(1.00,"rgba(0,0,0,0.00)");
-
-    ctx.fillStyle = g1;
+    ctx.fillStyle = g;
     ctx.fillRect(0, 0, sz, sz);
 
     ctx.globalCompositeOperation="source-in";
     ctx.drawImage(img, itemIdx*SOURCE_ITEM_SIZE, 0, SOURCE_ITEM_SIZE, SOURCE_ITEM_SIZE, 0, 0, sz, sz);
     ctx.globalCompositeOperation="source-over";
 }
+
+
+function prepareOnComputeCanvas2(srcCanvas)
+{
+    let sz = DRAWN_ITEM_SIZE;
+    let ctx = offCanvas.getContext("2d");
+    ctx.clearRect(0, 0, sz, sz);
+
+    let g = createFalloff(ctx, sz);
+
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, sz, sz);
+
+    ctx.globalCompositeOperation="source-in";
+    ctx.drawImage(srcCanvas, 0, 0, sz, sz);
+    ctx.globalCompositeOperation="source-over";
+}
+
 
 function drawItems()
 {
@@ -103,8 +107,7 @@ function drawItems()
     let img = new Image();
     img.onload = function () {
         let numItems = img.width / SOURCE_ITEM_SIZE;
-        //locs = getLocations(canvas.width, canvas.height, NUM_DRAWN_ITEMS);
-        locs = getLocationsPoisson(canvas.width, canvas.height, DRAWN_ITEM_SIZE);
+        let locs = getLocationsPoisson(canvas.width, canvas.height, DRAWN_ITEM_SIZE);
         let targetPlacementIdx = Math.floor(locs.length * Math.random());
         for(let i=0; i<locs.length; i++)
         {
@@ -112,14 +115,13 @@ function drawItems()
             let x = locs[i].cx - sz/2;
             let y = locs[i].cy - sz/2;
 
-            let sourceCanvas = offCanvas;
             if (i == targetPlacementIdx) {
-                sourceCanvas = offCanvasTarget;
+                prepareOnComputeCanvas2(targetCanvas);
             } else {
                 let itemIdx = Math.floor(Math.random() * numItems);
                 prepareOnComputeCanvas(img, itemIdx);
             }
-            ctx.drawImage(sourceCanvas, x, y);
+            ctx.drawImage(offCanvas, x, y);
         }
     };
     img.src = 'images/mosaic.png';
@@ -146,12 +148,14 @@ function generate()
     drawBackground();
 }
 
+function debugBase64(base64URL){
+    var win = window.open();
+    win.document.write('<iframe src="' + base64URL  + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
+}
+
 
 function readURL(input) 
 {
-    console.log(input);
-    console.log(input.files);
-
     if (input.files && input.files[0])
     {
         var reader = new FileReader();
@@ -160,10 +164,14 @@ function readURL(input)
             var image = new Image();
             image.onload = function(imageEvent)
             {
-                // Resize the image
-                var canvas = document.getElementById("canvas2");
-                canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
-                offCanvasTarget.getContext('2d').drawImage(image, 0, 0, offCanvasTarget.width, offCanvasTarget.height);
+                let success = extractFace(image, targetCanvas, ENLARGE_FACTOR);
+                if (success) {
+                    var canvas = document.getElementById("preview-canvas");
+                    var sz = Math.min(canvas.width, canvas.height);
+                    canvas.width = sz;
+                    canvas.height = sz;
+                    canvas.getContext("2d").drawImage(targetCanvas, 0, 0, canvas.width, canvas.height);
+                }
                 generate();
             }
             image.src = readerEvent.target.result;
@@ -173,13 +181,12 @@ function readURL(input)
 }
 
 
-document.getElementById("file-input").addEventListener("change", (e) => { readURL(e.target); });
-
-
 fetch(DATASET_CONFIG_URL)
 .then(res => res.json())
 .then((out) => {
     datasetConfig = out;
+    initFaceDetector();
+    initLayout();
     createOffscreenCanvas();
     generate();
 })

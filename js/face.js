@@ -31,21 +31,23 @@ function rgba_to_grayscale(rgba, nrows, ncols)
 }
 
 
-function extractImageData(img)
+// Draws image onto canvas at a clipped max size
+function drawResizedImage(img)
 {
     let canvas = document.createElement('canvas');
     let ctx = canvas.getContext('2d');
 
-    canvas.width = MAX_IMAGE_SIZE;
-    canvas.height = MAX_IMAGE_SIZE;
-
     let newDims = getScaledDimensions(img.width, img.height, MAX_IMAGE_SIZE);
 
+    canvas.width = newDims.width;
+    canvas.height = newDims.height;
+
     ctx.drawImage(img, 0, 0, newDims.width, newDims.height);
-    return ctx.getImageData(0, 0, img.width, img.height);
+    return canvas;
 }
 
-function findFace(img)
+
+function findFaceInCanvas(canvas)
 {
     params = {
         "shiftfactor": 0.1, // move the detection window by 10% of its size
@@ -54,64 +56,75 @@ function findFace(img)
         "scalefactor": 1.1  // for multiscale processing: resize the detection window by 10% when moving to the higher scale
     }
 
-    let rgba = extractImageData(img).data;
-    let pixels = rgba_to_grayscale(rgba, img.height, img.width);
+    // Extract pixels and convert to grayscale
+    let ctx = canvas.getContext("2d");
+    let rgba = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let pixels = rgba_to_grayscale(rgba, canvas.height, canvas.width);
 
-    image = {
+    let imageInfo = {
         "pixels": pixels,
-        "nrows": img.height,
-        "ncols": img.width,
-        "ldim": img.width
+        "nrows": canvas.height,
+        "ncols": canvas.width,
+        "ldim": canvas.width
     }
-    dets = pico.run_cascade(image, facefinder_classify_region, params);
+    dets = pico.run_cascade(imageInfo, facefinder_classify_region, params);
+
     console.log(dets);
     dets = pico.cluster_detections(dets, 0.2); // set IoU threshold to 0.2
     console.log(dets);
-    return dets;
+
+    if(dets.length > 0 && dets[0][3]>50.0)
+    {
+        result = {cx: dets[0][1], cy: dets[0][0], r: dets[0][2]/2};
+        return result;
+    }
+    else
+    {
+        return null;
+    }
 }
 
-fetch(cascadeurl).then(function(response) {
-    response.arrayBuffer().then(function(buffer) {
+// Get face image data (at arbitrary originally extracted size)
+function extractFace(img, dstCanvas, enlargeFactor)
+{
+    // Draw the image onto a canvas (with possible resizing)
+    let srcCanvas = drawResizedImage(img);
+
+    // Run face detection on canvas
+    let result = findFaceInCanvas(srcCanvas);
+    if (result==null)
+    { 
+        return false;
+    }
+
+    console.log("findFace returned:");
+    console.log(result);
+
+    let rf = enlargeFactor * result.r;
+    let x = result.cx - rf;
+    let y = result.cy - rf;
+    let sz = 2*rf;
+
+    dstCanvas.width = sz;
+    dstCanvas.height = sz;
+
+    // Draw extracted face onto this new canvas
+    let ctx = dstCanvas.getContext("2d");
+    ctx.clearRect(0, 0, sz, sz);
+    ctx.drawImage(srcCanvas, x, y, sz, sz, 0, 0, sz, sz);
+    return true;
+}
+
+
+function initFaceDetector()
+{
+    const request = async() => {
+        const response = await fetch(cascadeurl);
+        const buffer = await response.arrayBuffer();
         var bytes = new Int8Array(buffer);
         facefinder_classify_region = pico.unpack_cascade(bytes);
         console.log('* facefinder loaded');
+    }
 
-        let img = new Image();
-        img.onload = function () {
-            let dets = findFace(img);
-            var canvas = document.getElementById("test-canvas");
-            let ctx = canvas.getContext("2d");
-
-            //let data = extractImageData(img);
-            //ctx.drawImage(data, 0, 0);
-
-            let newDims = getScaledDimensions(img.width, img.height, canvas.width);
-            console.log(img.width);
-            console.log(img.height);
-            console.log(newDims);
-            ctx.drawImage(img, 0, 0, newDims.width, newDims.height);
-            //ctx.drawImage(img, 0, 0, img.width, img.height);
-
-            for(i=0; i<dets.length; ++i)
-            {
-                // check the detection score
-                // if it's above the threshold, draw it
-                // (the constant 50.0 is empirical: other cascades might require a different one)
-                if(dets[i][3]>50.0)
-                {
-                    var r, c, s;
-                    //
-                    ctx.beginPath();
-                    ctx.arc(dets[i][1], dets[i][0], dets[i][2]/2, 0, 2*Math.PI, false);
-                    ctx.lineWidth = 3;
-                    ctx.strokeStyle = 'red';
-                    ctx.stroke();
-                }
-			}
-        };
-
-        //img.src = "/images/testface.jpg";
-        //img.src = "/photos/t.jpg";
-        img.src = "/photos/IMG_20200408_185550.jpg";
-    })
-})
+    request();
+}
