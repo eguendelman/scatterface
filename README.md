@@ -1,4 +1,15 @@
-# TODO
+# ScatterFace: A "face search" game
+
+## Live on GitHub Pages
+
+See it live [here](https://eguendelman.github.io/scatterface/)
+
+## Description
+
+* Find a target face among many distractor faces (can come from a user-selected image)
+* Runs on client side, user-selected images are not uploaded anywhere
+
+## TODO
 
 * host on github pages if possible
 * persistent storage (caching) for dataset and uploaded images
@@ -8,7 +19,7 @@
 * check on mobile devices
 * if we create element without adding to DOM does it get garbage collected?
 
-## Ideas for later...
+### Ideas for later...
 
 * code refactor, more consistent use of async/then
 * gameification - e.g. play a series of images and use timer for scoring
@@ -19,14 +30,11 @@
 * downselect distractor faces to those that are most similar to the target face ("hard mode")
 * nicer background removal (in place of radial gradient)
 
-# References
+## Credits
 
-## Faces
-https://www.thispersondoesnotexist.com/
-https://generated.photos/faces/child
-
-## Random Scatter
-https://github.com/MatthewPageUK/js-poisson-disc/blob/master/js/poisson-disc.js
-
-## Face Detection
-https://github.com/tehnokv/picojs
+* **Concept** of personalized face search also available in print form here: https://www.putmeinthestory.com/ (look for "Find Me If You Can" book series)
+* **Backgrounds** come from https://unsplash.com/ (hand selected some "busy" images)
+* **Faces** come from https://www.thispersondoesnotexist.com/
+  * https://generated.photos/faces is another interesting resource but not used
+* **Face Detection** uses https://github.com/tehnokv/picojs
+* **Scatter Arrangement** uses the javascript Poisson Disc Sampling code from https://github.com/MatthewPageUK/js-poisson-disc
