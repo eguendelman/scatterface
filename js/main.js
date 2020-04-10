@@ -1,6 +1,8 @@
-var canvas = document.getElementById("my-canvas");
+var mainCanvas = document.getElementById("main-canvas");
+var previewCanvas = document.getElementById("preview-canvas");
+
 var compositorCanvas = document.createElement("canvas");
-var targetCanvas = document.createElement('canvas');
+var targetCanvas = document.createElement("canvas");
 
 var STORAGE_KEY = "targetImageData";
 var STORAGE_KEY_DIFFICULTY = "difficultyLevel";
@@ -9,7 +11,7 @@ var SOURCE_ITEM_SIZE = 256;
 var DATASET_CONFIG_URL = "config/backgrounds.json"
 var FACE_REGION_ENLARGE_FACTOR = 1.1;
 
-var BOTTOM_MARGIN = 64;
+var BOTTOM_MARGIN = 100;
 
 var datasetConfig = null;
 var difficultyLevel = parseInt(localStorage.getItem(STORAGE_KEY_DIFFICULTY) || "1");
@@ -28,13 +30,13 @@ function getDrawnItemSize()
     else if (difficultyLevel == 2) { factor = 20; }
     else if (difficultyLevel == 3) { factor = 35; }
     else if (difficultyLevel == 4) { factor = 45; }
-    return canvas.width/factor;
+    return mainCanvas.width/factor;
 }
 
 
 function setDifficultyLevel(level)
 {
-    if (level != difficultyLevel) 
+    if (level != difficultyLevel)
     {
         localStorage.setItem(STORAGE_KEY_DIFFICULTY, ""+level);
         let el = document.getElementById("refresh-button");
@@ -43,11 +45,24 @@ function setDifficultyLevel(level)
 }
 
 
-function initLayout()
-{
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight - BOTTOM_MARGIN;
+function resizeCanvasToDisplaySize(canvas) {
+   // look up the size the canvas is being displayed
+   const width = canvas.clientWidth;
+   const height = canvas.clientHeight;
 
+   // If it's resolution does not match change it
+   if (canvas.width !== width || canvas.height !== height) {
+     canvas.width = width;
+     canvas.height = height;
+     return true;
+   }
+
+   return false;
+}
+
+
+function initPage()
+{
     let el = document.getElementById("file-input");
     if (el != null) {
         el.addEventListener("change", (e) => { readURL(e.target); });
@@ -63,13 +78,22 @@ function initLayout()
 }
 
 
+function refreshLayout()
+{
+    resizeCanvasToDisplaySize(mainCanvas);
+    resizeCanvasToDisplaySize(previewCanvas);
+}
+
+
 function targetChanged()
 {
-    var canvas = document.getElementById("preview-canvas");
-    var sz = Math.min(canvas.width, canvas.height);
-    canvas.width = sz;
-    canvas.height = sz;
-    canvas.getContext("2d").drawImage(targetCanvas, 0, 0, canvas.width, canvas.height);
+    let canvas = previewCanvas;
+    let sz = Math.min(canvas.width, canvas.height);
+    //canvas.width = sz;
+    //canvas.height = sz;
+    console.log("Drawing image from target canvas");
+    console.log(sz);
+    canvas.getContext("2d").drawImage(targetCanvas, (canvas.width-sz)/2, 0, sz, sz);
 }
 
 
@@ -96,7 +120,6 @@ function saveToLocalStorage(canvas)
 {
     let data = getBase64ImageFromCanvas(canvas);
     console.log("Saving to local storage");
-    console.log(data);
     let full_data = {data:data, width:canvas.width, height:canvas.height}; 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(full_data));
 }
@@ -112,7 +135,7 @@ function loadFromLocalStorage(canvas)
     }
 
     full_data = JSON.parse(full_data);
-    console.log(full_data);
+    //console.log(full_data);
 
     img = new Image();
     img.src = "data:image/png;base64," + full_data.data;
@@ -134,17 +157,20 @@ function loadSavedData()
 }
 
 
-function getLocationsPoisson(width, height, spacing)
+function getLocationsPoisson(width, height, radius)
 {
-    let k = 100;
-    let myPoisson = new PoissonDisc(width, height, spacing, k, 2);
+    let k = 500;
+    let margin = radius;
+    let myPoisson = new PoissonDisc(width+2*margin, height+2*margin, 2*radius, k, 2);
     myPoisson.run();
     console.log(myPoisson);
 
     locs = Array();
     for (let i=0; i<myPoisson.points.length; i++) {
         let pt = myPoisson.points[i];
-        if (spacing < pt.px && pt.px < width-spacing && spacing < pt.py && pt.py < height-spacing) {
+        pt.px -= margin;
+        pt.py -= margin;
+        if (radius < pt.px && pt.px < width-radius && radius < pt.py && pt.py < height-radius) {
             locs.push({cx: pt.px, cy: pt.py});
         }
     }
@@ -203,7 +229,7 @@ function prepareOnCompositorCanvasFromCanvas(srcCanvas, dstCanvas)
 
 function drawItems()
 {
-    let ctx = canvas.getContext("2d");
+    let ctx = mainCanvas.getContext("2d");
 
     let sz = getDrawnItemSize();
     compositorCanvas.width = sz;
@@ -212,7 +238,7 @@ function drawItems()
     let img = new Image();
     img.onload = function () {
         let numItems = img.width / SOURCE_ITEM_SIZE;
-        let locs = getLocationsPoisson(canvas.width, canvas.height, sz);
+        let locs = getLocationsPoisson(mainCanvas.width, mainCanvas.height, sz/2);
 
         // location at index `targetPlacementIdx` will be the target image
         let targetPlacementIdx = Math.floor(locs.length * Math.random());
@@ -236,18 +262,20 @@ function drawItems()
 
 function drawBackground()
 {
-    ctx = canvas.getContext("2d");
-    console.log(datasetConfig);
-
+    let ctx = mainCanvas.getContext("2d");
     let numBackgrounds = datasetConfig.backgrounds.length;
     let bgIdx = Math.floor(numBackgrounds * Math.random());
+    let imageUrl = datasetConfig.backgrounds[bgIdx].imageUrl;
+    let sourceUrl = datasetConfig.backgrounds[bgIdx].sourceUrl;
 
     let img = new Image();
     img.onload = function () {
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, mainCanvas.width, mainCanvas.height);
         drawItems();
+
+        document.getElementById("bg-source-link").href = sourceUrl;
     };
-    img.src = datasetConfig.backgrounds[bgIdx].url;
+    img.src = imageUrl;
 }
 
 function generate()
@@ -279,12 +307,20 @@ function readURL(input)
 }
 
 
+//function foo()
+//{
+//    //targetChanged();
+//    loadFromLocalStorage(targetCanvas);
+//}
+
+
 fetch(DATASET_CONFIG_URL)
 .then(res => res.json())
 .then((out) => {
     datasetConfig = out;
     initFaceDetector();
-    initLayout();
+    initPage();
+    refreshLayout();
     loadSavedData();
     generate();
 })

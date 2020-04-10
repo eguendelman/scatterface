@@ -18,10 +18,10 @@ function getScaledDimensions(width, height, maxSize)
 
 function rgba_to_grayscale(rgba, nrows, ncols) 
 {
-    var gray = new Uint8Array(nrows*ncols);
-    for(var r=0; r<nrows; ++r)
+    let gray = new Uint8Array(nrows*ncols);
+    for(let r=0; r<nrows; ++r)
     {
-        for(var c=0; c<ncols; ++c)
+        for(let c=0; c<ncols; ++c)
         {
             // gray = 0.2*red + 0.7*green + 0.1*blue
             gray[r*ncols + c] = (2*rgba[r*4*ncols+4*c+0]+7*rgba[r*4*ncols+4*c+1]+1*rgba[r*4*ncols+4*c+2])/10;
@@ -121,7 +121,7 @@ function initFaceDetector()
     const request = async() => {
         const response = await fetch(cascadeurl);
         const buffer = await response.arrayBuffer();
-        var bytes = new Int8Array(buffer);
+        let bytes = new Int8Array(buffer);
         facefinder_classify_region = pico.unpack_cascade(bytes);
         console.log('* facefinder loaded');
     }

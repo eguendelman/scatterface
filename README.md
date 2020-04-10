@@ -11,13 +11,12 @@ See it live [here](https://eguendelman.github.io/scatterface/)
 
 ## TODO
 
+* debug why not working on mobile (at least not when grab image from camera)
 * host on github pages if possible
 * persistent storage (caching) for dataset and uploaded images
     https://stackoverflow.com/questions/19183180/how-to-save-an-image-to-localstorage-and-display-it-on-the-next-page
 * row of buttons at bottom, for refresh, preview target image, etc.
 * add credit line and links
-* check on mobile devices
-* if we create element without adding to DOM does it get garbage collected?
 * display count of how many faces are drawn
 
 ### Ideas for later...

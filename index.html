@@ -6,20 +6,21 @@
   </head>
   <body>
 
-    <div class="container-fluid">
-      <div class="row no-gutters">
-        <div class="col">
-          <canvas id="my-canvas"></canvas>
+    <div class="container-fluid p-0 h-100">
+      <div class="row no-gutters" style="height: 90%;">
+        <div class="col w-100">
+          <canvas id="main-canvas" class="h-100 w-100"></canvas>
         </div>
       </div>
-      <div class="row no-gutters" style="height: 64px;">
-        <div class="col-12 col-md-5">
+
+      <div class="row no-gutters">
+        <div class="col-12 col-md-5 text-left">
           <label class="btn btn-default btn-primary">Change Photo<input type="file" id="file-input" hidden></label>
         </div>
         <div class="col-12 col-md-2 text-center">
-          <canvas id="preview-canvas" class="h-100"></canvas>
+          <canvas id="preview-canvas" class="h-100 w-100"></canvas>
         </div>
-        <div class="col-12 col-md-5">
+        <div class="col-12 col-md-5 text-right">
           <button id="refresh-button" type="button" class="btn btn-primary">Refresh</button>
 
           <div class="btn-group btn-group-toggle" data-toggle="buttons">
@@ -37,10 +38,43 @@
             </label>
           </div>
 
+          <!--<button type="button" class="btn btn-info" onClick="foo();">test</button>-->
+
+          <!--
+          <button id="about-button" type="button" class="btn btn-info" data-toggle="modal" data-target="#aboutModal">About <span class="fa fa-github"></span></button>
+
+          <div class="modal" id="aboutModal" tabindex="-1" role="dialog" aria-labelledby="aboutModalLabel" aria-hidden="true">
+            <div class="modal-dialog text-left" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="aboutModalLabel">About ScatterFace</h5>
+                </div>
+                <div class="modal-body">
+                  <p>
+                    <a href="https://github.com/eguendelman/scatterface">github</a>
+                  </p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
+      -->
+      </div>
+
+      <div class="footer text-muted small">
+          Created by Eran Guendelman.
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <a href="https://github.com/eguendelman/scatterface"><span class="fa fa-github"></span> Source code</a>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <a href="#" id="bg-source-link">Background image on Unsplash</a>
       </div>
     </div>
 
+    <script src="https://use.fontawesome.com/b14b464e3d.js"></script>
     <script src="js/thirdparty/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
     <script src="js/thirdparty/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
     <script src="js/thirdparty/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
