@@ -4,7 +4,7 @@ var offCanvasTarget = null;
 
 var SOURCE_ITEM_SIZE = 256;
 var NUM_DRAWN_ITEMS = 100;
-var DRAWN_ITEM_SIZE = 64;
+var DRAWN_ITEM_SIZE = 32;
 var DATASET_CONFIG_URL = "dataset.json"
 
 var datasetConfig = null;
@@ -29,6 +29,23 @@ function getLocations1(width, height, n)
         locs.push({cx: x, cy: y});
     }
     return locs
+}
+
+function getLocationsPoisson(width, height, spacing)
+{
+    let k = 100;
+    let myPoisson = new PoissonDisc(width, height, spacing, k, 2);
+    myPoisson.run();
+    console.log(myPoisson);
+
+    locs = Array();
+    for (let i=0; i<myPoisson.points.length; i++) {
+        let pt = myPoisson.points[i];
+        if (spacing < pt.px && pt.px < width-spacing && spacing < pt.py && pt.py < height-spacing) {
+            locs.push({cx: pt.px, cy: pt.py});
+        }
+    }
+    return locs;
 }
 
 // Returns center locations
@@ -86,9 +103,10 @@ function drawItems()
     let img = new Image();
     img.onload = function () {
         let numItems = img.width / SOURCE_ITEM_SIZE;
-        let targetPlacementIdx = Math.floor(NUM_DRAWN_ITEMS * Math.random());
-        locs = getLocations(canvas.width, canvas.height, NUM_DRAWN_ITEMS);
-        for(let i=0; i<NUM_DRAWN_ITEMS; i++)
+        //locs = getLocations(canvas.width, canvas.height, NUM_DRAWN_ITEMS);
+        locs = getLocationsPoisson(canvas.width, canvas.height, DRAWN_ITEM_SIZE);
+        let targetPlacementIdx = Math.floor(locs.length * Math.random());
+        for(let i=0; i<locs.length; i++)
         {
             // locs.cx/cy represent the center, so we adjust for that
             let x = locs[i].cx - sz/2;
