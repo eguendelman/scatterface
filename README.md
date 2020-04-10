@@ -1,8 +1,8 @@
 # TODO
 
+* host on github pages if possible
 * persistent storage (caching) for dataset and uploaded images
     https://stackoverflow.com/questions/19183180/how-to-save-an-image-to-localstorage-and-display-it-on-the-next-page
-* add basic styling or bootstrap
 * row of buttons at bottom, for refresh, preview target image, etc.
 * add credit line and links
 * check on mobile devices
@@ -10,7 +10,12 @@
 
 ## Ideas for later...
 
-* additional datasets (e.g. Peppa Pig faces)
+* code refactor, more consistent use of async/then
+* gameification - e.g. play a series of images and use timer for scoring
+* allow search for multiple people in a single image
+* multiuser
+* better icon
+* additional datasets (e.g. Peppa Pig faces, emoji)
 * downselect distractor faces to those that are most similar to the target face ("hard mode")
 * nicer background removal (in place of radial gradient)
 

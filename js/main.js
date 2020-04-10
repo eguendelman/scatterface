@@ -1,17 +1,46 @@
 var canvas = document.getElementById("my-canvas");
-var offCanvas = null;
+var compositorCanvas = document.createElement("canvas");
+var targetCanvas = document.createElement('canvas');
+
+var STORAGE_KEY = "targetImageData";
+var STORAGE_KEY_DIFFICULTY = "difficultyLevel";
 
 var SOURCE_ITEM_SIZE = 256;
-var NUM_DRAWN_ITEMS = 100;
-var DRAWN_ITEM_SIZE = 100;
-var DATASET_CONFIG_URL = "dataset.json"
+var DATASET_CONFIG_URL = "config/backgrounds.json"
 var ENLARGE_FACTOR = 1.5;
 
-var BOTTOM_MARGIN = 128;
+var BOTTOM_MARGIN = 64;
 
 var datasetConfig = null;
+var difficultyLevel = parseInt(localStorage.getItem(STORAGE_KEY_DIFFICULTY) || "1");
 
-var targetCanvas = document.createElement('canvas');
+
+function debugBase64(base64URL){
+    var win = window.open();
+    win.document.write('<iframe src="' + base64URL  + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
+}
+
+
+function getDrawnItemSize()
+{
+    let factor = 1;
+    if (difficultyLevel == 1) { factor = 10; }
+    else if (difficultyLevel == 2) { factor = 20; }
+    else if (difficultyLevel == 3) { factor = 30; }
+    return canvas.width/factor;
+}
+
+
+function setDifficultyLevel(level)
+{
+    if (level != difficultyLevel) 
+    {
+        localStorage.setItem(STORAGE_KEY_DIFFICULTY, ""+level);
+        let el = document.getElementById("refresh-button");
+        el.click();
+    }
+}
+
 
 function initLayout()
 {
@@ -22,14 +51,87 @@ function initLayout()
     if (el != null) {
         el.addEventListener("change", (e) => { readURL(e.target); });
     }
+
+    el = document.getElementById("refresh-button");
+    if (el != null) {
+        el.addEventListener("click", (e) => { location.reload(); });
+    }
+
+    el = document.getElementById(`dif-${difficultyLevel}`);
+    el.click();
 }
 
-function createOffscreenCanvas() 
+
+function targetChanged()
 {
-    offCanvas = document.createElement('canvas');
-    offCanvas.width = DRAWN_ITEM_SIZE;
-    offCanvas.height = DRAWN_ITEM_SIZE;
+    var canvas = document.getElementById("preview-canvas");
+    var sz = Math.min(canvas.width, canvas.height);
+    canvas.width = sz;
+    canvas.height = sz;
+    canvas.getContext("2d").drawImage(targetCanvas, 0, 0, canvas.width, canvas.height);
 }
+
+
+// Helper for localStorage
+function getBase64ImageFromCanvas(canvas)
+{
+    var dataURL = canvas.toDataURL("image/png");
+    return dataURL.replace(/^data:image\/(png|jpg);base64,/, "");
+}
+
+
+function getBase64Image(img)
+{
+    let canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    let ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    return getBase64ImageFromCanvas(canvas);
+}
+
+
+function saveToLocalStorage(canvas)
+{
+    let data = getBase64ImageFromCanvas(canvas);
+    console.log("Saving to local storage");
+    console.log(data);
+    let full_data = {data:data, width:canvas.width, height:canvas.height}; 
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(full_data));
+}
+
+
+function loadFromLocalStorage(canvas)
+{
+    console.log("Loading from local storage");
+
+    let full_data = localStorage.getItem(STORAGE_KEY);
+    if (full_data == null) {
+        return false;
+    }
+
+    full_data = JSON.parse(full_data);
+    console.log(full_data);
+
+    img = new Image();
+    img.src = "data:image/png;base64," + full_data.data;
+
+    canvas.width = full_data.width;
+    canvas.height = full_data.height;
+    let ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    return true;
+}
+
+
+function loadSavedData()
+{
+    if(loadFromLocalStorage(targetCanvas))
+    {
+        targetChanged();
+    }
+}
+
 
 function getLocationsPoisson(width, height, spacing)
 {
@@ -64,10 +166,10 @@ function createFalloff(ctx, sz)
 }
 
 
-function prepareOnComputeCanvas(img, itemIdx)
+function prepareOnComputeCanvas(img, itemIdx, dstCanvas)
 {
-    let sz = DRAWN_ITEM_SIZE;
-    let ctx = offCanvas.getContext("2d");
+    let sz = dstCanvas.width;
+    let ctx = dstCanvas.getContext("2d");
     ctx.clearRect(0, 0, sz, sz);
 
     let g = createFalloff(ctx, sz);
@@ -81,10 +183,10 @@ function prepareOnComputeCanvas(img, itemIdx)
 }
 
 
-function prepareOnComputeCanvas2(srcCanvas)
+function prepareOnComputeCanvas2(srcCanvas, dstCanvas)
 {
-    let sz = DRAWN_ITEM_SIZE;
-    let ctx = offCanvas.getContext("2d");
+    let sz = dstCanvas.width;
+    let ctx = dstCanvas.getContext("2d");
     ctx.clearRect(0, 0, sz, sz);
 
     let g = createFalloff(ctx, sz);
@@ -102,12 +204,14 @@ function drawItems()
 {
     let ctx = canvas.getContext("2d");
 
-    let sz = DRAWN_ITEM_SIZE;
+    let sz = getDrawnItemSize();
+    compositorCanvas.width = sz;
+    compositorCanvas.height = sz;
 
     let img = new Image();
     img.onload = function () {
         let numItems = img.width / SOURCE_ITEM_SIZE;
-        let locs = getLocationsPoisson(canvas.width, canvas.height, DRAWN_ITEM_SIZE);
+        let locs = getLocationsPoisson(canvas.width, canvas.height, sz);
         let targetPlacementIdx = Math.floor(locs.length * Math.random());
         for(let i=0; i<locs.length; i++)
         {
@@ -116,12 +220,12 @@ function drawItems()
             let y = locs[i].cy - sz/2;
 
             if (i == targetPlacementIdx) {
-                prepareOnComputeCanvas2(targetCanvas);
+                prepareOnComputeCanvas2(targetCanvas, compositorCanvas);
             } else {
                 let itemIdx = Math.floor(Math.random() * numItems);
-                prepareOnComputeCanvas(img, itemIdx);
+                prepareOnComputeCanvas(img, itemIdx, compositorCanvas);
             }
-            ctx.drawImage(offCanvas, x, y);
+            ctx.drawImage(compositorCanvas, x, y);
         }
     };
     img.src = 'images/mosaic.png';
@@ -148,12 +252,6 @@ function generate()
     drawBackground();
 }
 
-function debugBase64(base64URL){
-    var win = window.open();
-    win.document.write('<iframe src="' + base64URL  + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
-}
-
-
 function readURL(input) 
 {
     if (input.files && input.files[0])
@@ -166,11 +264,8 @@ function readURL(input)
             {
                 let success = extractFace(image, targetCanvas, ENLARGE_FACTOR);
                 if (success) {
-                    var canvas = document.getElementById("preview-canvas");
-                    var sz = Math.min(canvas.width, canvas.height);
-                    canvas.width = sz;
-                    canvas.height = sz;
-                    canvas.getContext("2d").drawImage(targetCanvas, 0, 0, canvas.width, canvas.height);
+                    saveToLocalStorage(targetCanvas);
+                    targetChanged();
                 }
                 generate();
             }
@@ -187,7 +282,7 @@ fetch(DATASET_CONFIG_URL)
     datasetConfig = out;
     initFaceDetector();
     initLayout();
-    createOffscreenCanvas();
+    loadSavedData();
     generate();
 })
 .catch(err => { throw err });

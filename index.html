@@ -17,15 +17,28 @@
           <canvas id="my-canvas"></canvas>
         </div>
       </div>
-      <div class="row no-gutters" style="height: 128px;">
+      <div class="row no-gutters" style="height: 64px;">
         <div class="col-12 col-md-5">
-          <label class="btn btn-default btn-primary w-100 h-100">Browse<input type="file" id="file-input" hidden></label>
+          <label class="btn btn-default btn-primary">Change Photo<input type="file" id="file-input" hidden></label>
         </div>
-        <div class="col-12 col-md-2">
-          <canvas id="preview-canvas" class="w-100 h-100"></canvas>
+        <div class="col-12 col-md-2 text-center">
+          <canvas id="preview-canvas" class="h-100"></canvas>
         </div>
         <div class="col-12 col-md-5">
-          <button type="button" class="btn btn-primary w-100 h-100">Hi</button>
+          <button id="refresh-button" type="button" class="btn btn-primary">Refresh</button>
+
+          <div class="btn-group btn-group-toggle" data-toggle="buttons">
+            <label class="btn btn-secondary">
+              <input type="radio" name="options" id="dif-1" onClick="setDifficultyLevel(1);"> Easy
+            </label>
+            <label class="btn btn-secondary">
+              <input type="radio" name="options" id="dif-2" onClick="setDifficultyLevel(2);"> Medium
+            </label>
+            <label class="btn btn-secondary">
+              <input type="radio" name="options" id="dif-3" onClick="setDifficultyLevel(3);"> Hard
+            </label>
+          </div>
+
         </div>
       </div>
     </div>
