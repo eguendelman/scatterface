@@ -228,7 +228,7 @@ function drawItems()
             ctx.drawImage(compositorCanvas, x, y);
         }
     };
-    img.src = 'images/mosaic.png';
+    img.src = 'images/mosaic.jpg';
 }
 
 function drawBackground()
