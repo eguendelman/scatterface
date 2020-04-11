@@ -11,7 +11,6 @@ See it live [here](https://eguendelman.github.io/scatterface/)
 
 ## TODO
 
-* draw bg with no stretch
 * why have to reload twice sometimes to see the custom target image
 * ability to save/export as image
 

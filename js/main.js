@@ -218,7 +218,6 @@ function drawItems()
 
 function drawBackground()
 {
-    let ctx = mainCanvas.getContext("2d");
     let numBackgrounds = datasetConfig.backgrounds.length;
     let bgIdx = Math.floor(numBackgrounds * Math.random());
     let imageUrl = datasetConfig.backgrounds[bgIdx].imageUrl;
@@ -227,8 +226,7 @@ function drawBackground()
     let img = new Image();
     img.onload = function () {
         document.getElementById("bg-source-link").href = sourceUrl;
-
-        ctx.drawImage(img, 0, 0, mainCanvas.width, mainCanvas.height);
+        drawImageScaleToFill(img, mainCanvas);
         drawItems();
     };
     img.src = imageUrl;

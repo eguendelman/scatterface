@@ -16,14 +16,27 @@ function resizeCanvasToDisplaySize(canvas)
 }
 
 
-function drawImageScaleToFit(img, canvas)
+function drawScaledImage(img, canvas, f)
 {
-    let f = Math.min(canvas.width/img.width, canvas.height/img.height);
     let ctx = canvas.getContext("2d");
     let offx = 0.5*(canvas.width - f*img.width);
     let offy = 0.5*(canvas.height - f*img.height);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, offx, offy, f*img.width, f*img.height);
+}
+
+
+function drawImageScaleToFit(img, canvas)
+{
+    let f = Math.min(canvas.width/img.width, canvas.height/img.height);
+    drawScaledImage(img, canvas, f);
+}
+
+
+function drawImageScaleToFill(img, canvas)
+{
+    let f = Math.max(canvas.width/img.width, canvas.height/img.height);
+    drawScaledImage(img, canvas, f);
 }
 
 
