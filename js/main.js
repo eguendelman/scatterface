@@ -10,6 +10,9 @@ var STORAGE_KEY_DIFFICULTY = "difficultyLevel";
 var FACE_DETECT_MAX_IMAGE_SIZE = 2048;
 var FACE_DETECT_ENLARGE_FACTOR = 1.2;
 
+var LINE_WIDTH = 4;
+var LINE_STYLE = 'red';
+
 var DATASET_CONFIG_URL = "config/backgrounds.json"
 
 var datasetConfig = null;
@@ -50,13 +53,18 @@ function initPage()
     let el = document.getElementById("change-target-file-input");
     if (el != null) {
         el.onchange = function (e) {
-          loadImage(e.target.files[0], onImageLoad, { maxWidth: FACE_DETECT_MAX_IMAGE_SIZE, orientation: true });
+          loadImage(e.target.files[0], onImageLoad, { maxWidth: FACE_DETECT_MAX_IMAGE_SIZE, orientation: true, crossOrigin: true });
         }
     }
 
     el = document.getElementById("refresh-button");
     if (el != null) {
         el.onclick = function(e) { generate(); }
+    }
+
+    el = document.getElementById("save-button");
+    if (el != null) {
+        el.onclick = function(e) { saveToImage(); }
     }
 
     el = document.getElementById(`dif-${difficultyLevel}`);
@@ -213,7 +221,13 @@ function overlayLegend()
     let circle = { cx: cx, cy: cy, r: r };
 
     let bottomMargin = circle.r/2;
-    ctx.clearRect(0, mainCanvas.height-bottomMargin, mainCanvas.width, bottomMargin);
+
+    drawCircle(mainCanvas, circle.cx, circle.cy, circle.r+LINE_WIDTH, LINE_WIDTH, LINE_STYLE);
+
+    drawHLine(mainCanvas, mainCanvas.height-bottomMargin, LINE_WIDTH, LINE_STYLE);
+
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, mainCanvas.height-bottomMargin, mainCanvas.width, bottomMargin);
 
     compositorCanvas2.width = 2*circle.r;
     compositorCanvas2.height = 2*circle.r;
@@ -222,23 +236,8 @@ function overlayLegend()
     prepareOnCompositorCanvas(srcInfo, compositorCanvas2, false);
     ctx.drawImage(compositorCanvas2, circle.cx - circle.r, circle.cy - circle.r);
 
-    ctx.beginPath();
-    ctx.arc(circle.cx, circle.cy, circle.r, 0, 2*Math.PI, false);
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = 'white';
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(circle.cx, circle.cy, circle.r-4, 0, 2*Math.PI, false);
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = 'red';
-    ctx.stroke();
-
-    //ctx.beginPath();
-    //ctx.arc(circle.cx, circle.cy, circle.r-8, 0, 2*Math.PI, false);
-    //ctx.lineWidth = 4;
-    //ctx.strokeStyle = 'white';
-    //ctx.stroke();
+    drawCircle(mainCanvas, circle.cx, circle.cy, circle.r, LINE_WIDTH, 'white');
+    drawCircle(mainCanvas, circle.cx, circle.cy, circle.r-LINE_WIDTH, LINE_WIDTH, LINE_STYLE);
 
     let legendInfo = { circle: circle, extraMargins: { l: 0, r: 0, t: 0, b: bottomMargin } };
     return legendInfo;
@@ -283,6 +282,7 @@ function drawItems()
             ctx.drawImage(compositorCanvas, x, y);
         }
     };
+    img.setAttribute('crossorigin', 'anonymous');
     img.src = 'images/mosaic.jpg';
 }
 
@@ -300,6 +300,7 @@ function drawBackground()
         drawImageScaleToFill(img, mainCanvas);
         drawItems();
     };
+    img.setAttribute('crossorigin', 'anonymous');
     img.src = imageUrl;
 }
 
@@ -307,6 +308,18 @@ function drawBackground()
 function generate()
 {
     drawBackground();
+}
+
+
+function saveToImage()
+{
+    var img = mainCanvas.toDataURL("image/png");
+    //document.write('<img src="'+img+'"/>');
+    //window.location = img;
+    var link = document.createElement('a');
+    link.download = 'scatterface.png';
+    link.href = img;
+    link.click();
 }
 
 
@@ -354,7 +367,7 @@ function onImageLoad(img)
             });
 
         console.log(result);
-        drawCircle(previewCanvas, result.cx, result.cy, result.r);
+        drawCircle(previewCanvas, result.cx, result.cy, result.r, 10, 'lightgreen');
     }
     else
     {

@@ -14,10 +14,10 @@
       </div>
 
       <div class="row no-gutters">
-        <div class="col col-md-6 text-left">
+        <div class="col col-md-4 text-left">
           <label class="btn btn-default btn-primary">Change Target Face<input type="file" id="change-target-file-input" hidden></label>
         </div>
-        <div class="col col-md-6 text-right">
+        <div class="col col-md-4 text-center">
           <div class="btn-group btn-group-toggle" data-toggle="buttons">
             <label class="btn btn-secondary">
               <input type="radio" name="options" id="dif-1" onClick="setDifficultyLevel(1);"> Easy
@@ -32,8 +32,10 @@
               <input type="radio" name="options" id="dif-4" onClick="setDifficultyLevel(4);"> Insane
             </label>
           </div>
-
-          <button id="refresh-button" type="button" class="btn btn-primary">Another <i class="fa fa-repeat"></i></button>
+          <button id="refresh-button" type="button" class="btn btn-primary"><i class="fa fa-repeat"></i> Another</button>
+        </div>
+        <div class="col col-md-4 text-right">
+          <button id="save-button" type="button" class="btn btn-primary"><i class="fa fa-download"></i> Save Image</button>
 
           <!--
           <button id="about-button" type="button" class="btn btn-info" data-toggle="modal" data-target="#aboutModal">About <span class="fa fa-github"></span></button>

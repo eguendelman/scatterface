@@ -55,13 +55,25 @@ function drawImageToCanvasWithLimitedSize(img, canvas, maxSize)
 }
 
 
-function drawCircle(canvas, x, y, r)
+function drawCircle(canvas, x, y, r, width, style)
 {
     let ctx = canvas.getContext("2d");
     ctx.beginPath();
     ctx.arc(x, y, r, 0, 2*Math.PI, false);
-    ctx.lineWidth = 10;
-    ctx.strokeStyle = 'lightgreen';
+    ctx.lineWidth = width;
+    ctx.strokeStyle = style;
+    ctx.stroke();
+}
+
+
+function drawHLine(canvas, y, width, style)
+{
+    let ctx = canvas.getContext("2d");
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.lineWidth = width;
+    ctx.strokeStyle = style;
     ctx.stroke();
 }
 
