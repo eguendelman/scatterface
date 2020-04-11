@@ -191,6 +191,8 @@ function drawItems()
         let numItems = img.width / srcItemSize;
         let locs = getLocationsPoisson(mainCanvas.width, mainCanvas.height, sz/2);
 
+        document.getElementById("face-count-label").innerText = locs.length;
+
         // location at index `targetPlacementIdx` will be the target image
         let targetPlacementIdx = Math.floor(locs.length * Math.random());
         for(let i=0; i<locs.length; i++)
@@ -224,10 +226,10 @@ function drawBackground()
 
     let img = new Image();
     img.onload = function () {
+        document.getElementById("bg-source-link").href = sourceUrl;
+
         ctx.drawImage(img, 0, 0, mainCanvas.width, mainCanvas.height);
         drawItems();
-
-        document.getElementById("bg-source-link").href = sourceUrl;
     };
     img.src = imageUrl;
 }
