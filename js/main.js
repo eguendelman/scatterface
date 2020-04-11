@@ -8,12 +8,9 @@ var STORAGE_KEY = "targetImageData";
 var STORAGE_KEY_DIFFICULTY = "difficultyLevel";
 
 var FACE_DETECT_MAX_IMAGE_SIZE = 2048;
-var FACE_DETECT_ENLARGE_FACTOR = 1.1;
+var FACE_DETECT_ENLARGE_FACTOR = 1.2;
 
-var SOURCE_ITEM_SIZE = 256;
 var DATASET_CONFIG_URL = "config/backgrounds.json"
-
-var BOTTOM_MARGIN = 100;
 
 var datasetConfig = null;
 var difficultyLevel = parseInt(localStorage.getItem(STORAGE_KEY_DIFFICULTY) || "1");
@@ -34,9 +31,9 @@ function setDifficultyLevel(level)
 {
     if (level != difficultyLevel)
     {
+        difficultyLevel = level;
         localStorage.setItem(STORAGE_KEY_DIFFICULTY, ""+level);
-        let el = document.getElementById("refresh-button");
-        el.click();
+        generate();
     }
 }
 
@@ -52,11 +49,12 @@ function initPage()
 
     el = document.getElementById("refresh-button");
     if (el != null) {
-        el.onclick = function(e) { location.reload(); }
+        el.onclick = function(e) { generate(); }
     }
 
     el = document.getElementById(`dif-${difficultyLevel}`);
-    el.click();
+    el.checked = true;
+    el.classList.add("active");
 }
 
 
@@ -156,7 +154,8 @@ function createFalloff(ctx, sz)
 }
 
 
-function prepareOnCompositorCanvasFromImage(img, itemIdx, dstCanvas)
+// srcInfo is an object with fields defining the source image/canvas and offsets
+function prepareOnCompositorCanvas(srcInfo, dstCanvas)
 {
     let sz = dstCanvas.width;
     let ctx = dstCanvas.getContext("2d");
@@ -168,24 +167,11 @@ function prepareOnCompositorCanvasFromImage(img, itemIdx, dstCanvas)
     ctx.fillRect(0, 0, sz, sz);
 
     ctx.globalCompositeOperation="source-in";
-    ctx.drawImage(img, itemIdx*SOURCE_ITEM_SIZE, 0, SOURCE_ITEM_SIZE, SOURCE_ITEM_SIZE, 0, 0, sz, sz);
-    ctx.globalCompositeOperation="source-over";
-}
-
-
-function prepareOnCompositorCanvasFromCanvas(srcCanvas, dstCanvas)
-{
-    let sz = dstCanvas.width;
-    let ctx = dstCanvas.getContext("2d");
-    ctx.clearRect(0, 0, sz, sz);
-
-    let g = createFalloff(ctx, sz);
-
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, sz, sz);
-
-    ctx.globalCompositeOperation="source-in";
-    ctx.drawImage(srcCanvas, 0, 0, sz, sz);
+    if (srcInfo.sx != undefined) {
+        ctx.drawImage(srcInfo.img, srcInfo.sx, srcInfo.sy, srcInfo.swidth, srcInfo.sheight, 0, 0, sz, sz);
+    } else {
+        ctx.drawImage(srcInfo.img, 0, 0, sz, sz);
+    }
     ctx.globalCompositeOperation="source-over";
 }
 
@@ -200,7 +186,9 @@ function drawItems()
 
     let img = new Image();
     img.onload = function () {
-        let numItems = img.width / SOURCE_ITEM_SIZE;
+        // assumes the mosaic is a horizontal stacking (no padding) of square images
+        let srcItemSize = img.height;
+        let numItems = img.width / srcItemSize;
         let locs = getLocationsPoisson(mainCanvas.width, mainCanvas.height, sz/2);
 
         // location at index `targetPlacementIdx` will be the target image
@@ -211,12 +199,14 @@ function drawItems()
             let x = locs[i].cx - sz/2;
             let y = locs[i].cy - sz/2;
 
+            let srcInfo = null;
             if (i == targetPlacementIdx) {
-                prepareOnCompositorCanvasFromCanvas(targetCanvas, compositorCanvas);
+                srcInfo = {img: targetCanvas};
             } else {
                 let itemIdx = Math.floor(Math.random() * numItems);
-                prepareOnCompositorCanvasFromImage(img, itemIdx, compositorCanvas);
+                srcInfo = {img: img, sx: itemIdx*srcItemSize, sy: 0, swidth: srcItemSize, sheight: srcItemSize};
             }
+            prepareOnCompositorCanvas(srcInfo, compositorCanvas);
             ctx.drawImage(compositorCanvas, x, y);
         }
     };
@@ -263,9 +253,6 @@ function extractFace(result, srcCanvas, dstCanvas)
     ctx.clearRect(0, 0, sz, sz);
     ctx.drawImage(srcCanvas, x, y, sz, sz, 0, 0, sz, sz);
     return true;
-
-
-
 }
 
 
@@ -310,40 +297,6 @@ function onImageLoad(img)
 
     $('#change-target-modal').modal('show');
 }
-
-
-function readURL(input) 
-{
-    console.log(input.files);
-    if (input.files && input.files[0])
-    {
-        var reader = new FileReader();
-        reader.onload = function(readerEvent)
-        {
-            console.log("onload");
-            var image = new Image();
-            image.onload = (imageEvent) => { onImageLoad(image); };
-            image.src = readerEvent.target.result;
-        }
-        reader.readAsDataURL(input.files[0]);
-        // Clear the value of the input so that we can retrigger "change" event next time
-        input.value = "";
-    }
-}
-
-
-function startChangeTargetWorkflow(input)
-{
-    console.log("Starting workflow");
-    readURL(input);
-}
-
-
-//function foo()
-//{
-//    //targetChanged();
-//    loadFromLocalStorage(targetCanvas);
-//}
 
 
 fetch(DATASET_CONFIG_URL)

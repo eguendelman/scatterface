@@ -11,17 +11,13 @@ See it live [here](https://eguendelman.github.io/scatterface/)
 
 ## TODO
 
-* debug why not working on mobile (at least not when grab image from camera)
-* host on github pages if possible
-* persistent storage (caching) for dataset and uploaded images
-    https://stackoverflow.com/questions/19183180/how-to-save-an-image-to-localstorage-and-display-it-on-the-next-page
-* row of buttons at bottom, for refresh, preview target image, etc.
-* add credit line and links
+* why have to reload twice sometimes to see the custom target image
 * display count of how many faces are drawn
+* ability to save/export as image
 
 ### Ideas for later...
 
-* ability to save/export as image
+* consider DPI when determining sizes for difficulty levels
 * code refactor, more consistent use of async/then
 * gameification - e.g. play a series of images and use timer for scoring
 * allow search for multiple people in a single image
