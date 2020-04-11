@@ -39,3 +39,4 @@ See it live [here](https://eguendelman.github.io/scatterface/)
   * https://generated.photos/faces is another interesting resource but not used
 * **Face Detection** uses https://github.com/tehnokv/picojs
 * **Scatter Arrangement** uses the javascript Poisson Disc Sampling code from https://github.com/MatthewPageUK/js-poisson-disc
+* **Image Orientation Fix** uses https://github.com/blueimp/JavaScript-Load-Image t

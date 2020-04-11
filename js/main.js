@@ -19,12 +19,6 @@ var datasetConfig = null;
 var difficultyLevel = parseInt(localStorage.getItem(STORAGE_KEY_DIFFICULTY) || "1");
 
 
-function debugBase64(base64URL){
-    var win = window.open();
-    win.document.write('<iframe src="' + base64URL  + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
-}
-
-
 function getDrawnItemSize()
 {
     let factor = 1;
@@ -49,14 +43,16 @@ function setDifficultyLevel(level)
 
 function initPage()
 {
-    let el = document.getElementById("change-target");
+    let el = document.getElementById("change-target-file-input");
     if (el != null) {
-        el.addEventListener("change", (e) => { startChangeTargetWorkflow(e.target); });
+        el.onchange = function (e) {
+          loadImage(e.target.files[0], onImageLoad, { maxWidth: FACE_DETECT_MAX_IMAGE_SIZE, orientation: true });
+        }
     }
 
     el = document.getElementById("refresh-button");
     if (el != null) {
-        el.addEventListener("click", (e) => { location.reload(); });
+        el.onclick = function(e) { location.reload(); }
     }
 
     el = document.getElementById(`dif-${difficultyLevel}`);
@@ -80,25 +76,6 @@ function targetChanged()
     console.log("Drawing image from target canvas");
     console.log(sz);
     canvas.getContext("2d").drawImage(targetCanvas, (canvas.width-sz)/2, 0, sz, sz);
-}
-
-
-// Helper for localStorage
-function getBase64ImageFromCanvas(canvas)
-{
-    var dataURL = canvas.toDataURL("image/png");
-    return dataURL.replace(/^data:image\/(png|jpg);base64,/, "");
-}
-
-
-function getBase64Image(img)
-{
-    let canvas = document.createElement("canvas");
-    canvas.width = img.width;
-    canvas.height = img.height;
-    let ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0);
-    return getBase64ImageFromCanvas(canvas);
 }
 
 
