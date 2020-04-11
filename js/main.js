@@ -99,23 +99,26 @@ function saveToLocalStorage(canvas)
 
 function loadFromLocalStorage(canvas)
 {
-    console.log("Loading from local storage");
+    console.log("Loading target image data from local storage");
 
     let full_data = localStorage.getItem(STORAGE_KEY);
     if (full_data == null) {
+        console.log("Did not find target image data in local storage");
         return false;
     }
 
     full_data = JSON.parse(full_data);
-    //console.log(full_data);
-
-    img = new Image();
-    img.src = "data:image/png;base64," + full_data.data;
-
     canvas.width = full_data.width;
     canvas.height = full_data.height;
-    let ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0);
+
+    img = new Image();
+    img.onload = function () {
+        // if onload doesn't happen quickly enough after setting src, the rest of the pipeline might not be so happy
+        let ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+    }
+    img.src = "data:image/png;base64," + full_data.data;
+
     return true;
 }
 
@@ -425,6 +428,7 @@ function onImageLoad(img)
 
         $('#change-target-accept')
             .prop('disabled',false)
+            .off()
             .on('click', function(e) {
                 extractFace(result, tmpCanvas, targetCanvas);
                 saveToLocalStorage(targetCanvas);
