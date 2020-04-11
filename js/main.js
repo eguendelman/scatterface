@@ -1,19 +1,19 @@
 var mainCanvas = document.getElementById("main-canvas");
-var previewCanvas = document.getElementById("preview-canvas");
 
 var compositorCanvas = document.createElement("canvas");
+var compositorCanvas2 = document.createElement("canvas");
 var targetCanvas = document.createElement("canvas");
 
 var STORAGE_KEY = "targetImageData";
 var STORAGE_KEY_DIFFICULTY = "difficultyLevel";
 
 var FACE_DETECT_MAX_IMAGE_SIZE = 2048;
-var FACE_DETECT_ENLARGE_FACTOR = 1.1;
+var FACE_DETECT_ENLARGE_FACTOR = 1.2;
 
-var SOURCE_ITEM_SIZE = 256;
+var LINE_WIDTH = 4;
+var LINE_STYLE = 'red';
+
 var DATASET_CONFIG_URL = "config/backgrounds.json"
-
-var BOTTOM_MARGIN = 100;
 
 var datasetConfig = null;
 var difficultyLevel = parseInt(localStorage.getItem(STORAGE_KEY_DIFFICULTY) || "1");
@@ -30,13 +30,20 @@ function getDrawnItemSize()
 }
 
 
+function getLegendSize()
+{
+    let factor = 10;
+    return mainCanvas.width/factor;
+}
+
+
 function setDifficultyLevel(level)
 {
     if (level != difficultyLevel)
     {
+        difficultyLevel = level;
         localStorage.setItem(STORAGE_KEY_DIFFICULTY, ""+level);
-        let el = document.getElementById("refresh-button");
-        el.click();
+        generate();
     }
 }
 
@@ -46,36 +53,34 @@ function initPage()
     let el = document.getElementById("change-target-file-input");
     if (el != null) {
         el.onchange = function (e) {
-          loadImage(e.target.files[0], onImageLoad, { maxWidth: FACE_DETECT_MAX_IMAGE_SIZE, orientation: true });
+          loadImage(e.target.files[0], onImageLoad, { maxWidth: FACE_DETECT_MAX_IMAGE_SIZE, orientation: true, crossOrigin: true });
         }
     }
 
     el = document.getElementById("refresh-button");
     if (el != null) {
-        el.onclick = function(e) { location.reload(); }
+        el.onclick = function(e) { generate(); }
+    }
+
+    el = document.getElementById("save-button");
+    if (el != null) {
+        el.onclick = function(e) { saveToImage(); }
     }
 
     el = document.getElementById(`dif-${difficultyLevel}`);
-    el.click();
+    el.checked = true;
 }
 
 
 function refreshLayout()
 {
     resizeCanvasToDisplaySize(mainCanvas);
-    resizeCanvasToDisplaySize(previewCanvas);
 }
 
 
 function targetChanged()
 {
-    let canvas = previewCanvas;
-    let sz = Math.min(canvas.width, canvas.height);
-    //canvas.width = sz;
-    //canvas.height = sz;
-    console.log("Drawing image from target canvas");
-    console.log(sz);
-    canvas.getContext("2d").drawImage(targetCanvas, (canvas.width-sz)/2, 0, sz, sz);
+    // This used to do something but right now nothing is needed here... 
 }
 
 
@@ -120,10 +125,24 @@ function loadSavedData()
 }
 
 
-function getLocationsPoisson(width, height, radius)
+function circlesOverlap(x1, y1, r1, x2, y2, r2)
+{
+    let dx = x2-x1;
+    let dy = y2-y1;
+    let lensqr = dx*dx + dy*dy;
+    let r12sqr = (r1+r2)*(r1+r2);
+    return lensqr < r12sqr;
+}
+
+
+// extraMargins is used in case the canvas is larger than just the bg image, which is
+// the case if we draw the legend overlay on it with extra margins on bottom.
+function getLocationsPoisson(width, height, radius, extraMargins, excludedCircle)
 {
     let k = 500;
-    let margin = radius;
+    // This extra margin is so that we get nicer distributed points around boundaries
+    // We subtract it later
+    let margin = radius; 
     let myPoisson = new PoissonDisc(width+2*margin, height+2*margin, 2*radius, k, 2);
     myPoisson.run();
     console.log(myPoisson);
@@ -133,8 +152,13 @@ function getLocationsPoisson(width, height, radius)
         let pt = myPoisson.points[i];
         pt.px -= margin;
         pt.py -= margin;
-        if (radius < pt.px && pt.px < width-radius && radius < pt.py && pt.py < height-radius) {
-            locs.push({cx: pt.px, cy: pt.py});
+        if (radius+extraMargins.l < pt.px && pt.px < width-radius-extraMargins.r && 
+            radius+extraMargins.t < pt.py && pt.py < height-radius-extraMargins.b) 
+        {
+            if (excludedCircle==null || !circlesOverlap(pt.px, pt.py, radius, excludedCircle.cx, excludedCircle.cy, excludedCircle.r))
+            {
+                locs.push({cx: pt.px, cy: pt.py});
+            }
         }
     }
     return locs;
@@ -156,37 +180,88 @@ function createFalloff(ctx, sz)
 }
 
 
-function prepareOnCompositorCanvasFromImage(img, itemIdx, dstCanvas)
+// srcInfo is an object with fields defining the source image/canvas and offsets
+function prepareOnCompositorCanvas(srcInfo, dstCanvas, withFalloff)
 {
     let sz = dstCanvas.width;
     let ctx = dstCanvas.getContext("2d");
     ctx.clearRect(0, 0, sz, sz);
 
-    let g = createFalloff(ctx, sz);
-
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, sz, sz);
+    if (withFalloff)
+    {
+        let g = createFalloff(ctx, sz);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, sz, sz);
+    }
+    else
+    {
+        ctx.beginPath();
+        ctx.arc(sz/2, sz/2, sz/2, 0, 2*Math.PI, false);
+        ctx.fillStyle = "black";
+        ctx.fill();
+    }
 
     ctx.globalCompositeOperation="source-in";
-    ctx.drawImage(img, itemIdx*SOURCE_ITEM_SIZE, 0, SOURCE_ITEM_SIZE, SOURCE_ITEM_SIZE, 0, 0, sz, sz);
+    if (srcInfo.sx != undefined) {
+        ctx.drawImage(srcInfo.img, srcInfo.sx, srcInfo.sy, srcInfo.swidth, srcInfo.sheight, 0, 0, sz, sz);
+    } else {
+        ctx.drawImage(srcInfo.img, 0, 0, sz, sz);
+    }
     ctx.globalCompositeOperation="source-over";
 }
 
 
-function prepareOnCompositorCanvasFromCanvas(srcCanvas, dstCanvas)
+// Adds some basic watermark/info stamp to the saved image
+function stampImage(canvas)
 {
-    let sz = dstCanvas.width;
-    let ctx = dstCanvas.getContext("2d");
-    ctx.clearRect(0, 0, sz, sz);
+    let ctx = canvas.getContext("2d");
 
-    let g = createFalloff(ctx, sz);
+    let s1 = "Generated on scatterface.eg42.net";
+    let numFaces = document.getElementById("face-count-label").innerText;
+    let s2 = `This image contains ${numFaces} faces`;
 
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, sz, sz);
+    let y = canvas.height - 8;
+    ctx.font = "italic 16px Arial";
+    ctx.fillStyle = "black";
 
-    ctx.globalCompositeOperation="source-in";
-    ctx.drawImage(srcCanvas, 0, 0, sz, sz);
-    ctx.globalCompositeOperation="source-over";
+    ctx.textAlign = "left";
+    ctx.fillText(s1, 0, y);
+
+    ctx.textAlign = "right";
+    ctx.fillText(s2, canvas.width, y);
+}
+
+
+function overlayLegend()
+{
+    let ctx = mainCanvas.getContext("2d");
+
+    let r = getLegendSize()/2;
+    let cx = mainCanvas.width/2;
+    let cy = mainCanvas.height-r;
+    let circle = { cx: cx, cy: cy, r: r };
+
+    let bottomMargin = circle.r/2;
+
+    drawCircle(mainCanvas, circle.cx, circle.cy, circle.r+LINE_WIDTH, LINE_WIDTH, LINE_STYLE);
+
+    drawHLine(mainCanvas, mainCanvas.height-bottomMargin, LINE_WIDTH, LINE_STYLE);
+
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, mainCanvas.height-bottomMargin, mainCanvas.width, bottomMargin);
+
+    compositorCanvas2.width = 2*circle.r;
+    compositorCanvas2.height = 2*circle.r;
+
+    let srcInfo = {img: targetCanvas};
+    prepareOnCompositorCanvas(srcInfo, compositorCanvas2, false);
+    ctx.drawImage(compositorCanvas2, circle.cx - circle.r, circle.cy - circle.r);
+
+    drawCircle(mainCanvas, circle.cx, circle.cy, circle.r, LINE_WIDTH, 'white');
+    drawCircle(mainCanvas, circle.cx, circle.cy, circle.r-LINE_WIDTH, LINE_WIDTH, LINE_STYLE);
+
+    let legendInfo = { circle: circle, extraMargins: { l: 0, r: 0, t: 0, b: bottomMargin } };
+    return legendInfo;
 }
 
 
@@ -198,10 +273,16 @@ function drawItems()
     compositorCanvas.width = sz;
     compositorCanvas.height = sz;
 
+    let legendInfo = overlayLegend();
+
     let img = new Image();
     img.onload = function () {
-        let numItems = img.width / SOURCE_ITEM_SIZE;
-        let locs = getLocationsPoisson(mainCanvas.width, mainCanvas.height, sz/2);
+        // assumes the mosaic is a horizontal stacking (no padding) of square images
+        let srcItemSize = img.height;
+        let numItems = img.width / srcItemSize;
+        let locs = getLocationsPoisson(mainCanvas.width, mainCanvas.height, sz/2, legendInfo.extraMargins, legendInfo.circle);
+
+        document.getElementById("face-count-label").innerText = locs.length;
 
         // location at index `targetPlacementIdx` will be the target image
         let targetPlacementIdx = Math.floor(locs.length * Math.random());
@@ -211,22 +292,24 @@ function drawItems()
             let x = locs[i].cx - sz/2;
             let y = locs[i].cy - sz/2;
 
+            let srcInfo = null;
             if (i == targetPlacementIdx) {
-                prepareOnCompositorCanvasFromCanvas(targetCanvas, compositorCanvas);
+                srcInfo = {img: targetCanvas};
             } else {
                 let itemIdx = Math.floor(Math.random() * numItems);
-                prepareOnCompositorCanvasFromImage(img, itemIdx, compositorCanvas);
+                srcInfo = {img: img, sx: itemIdx*srcItemSize, sy: 0, swidth: srcItemSize, sheight: srcItemSize};
             }
+            prepareOnCompositorCanvas(srcInfo, compositorCanvas, true);
             ctx.drawImage(compositorCanvas, x, y);
         }
     };
+    img.setAttribute('crossorigin', 'anonymous');
     img.src = 'images/mosaic.jpg';
 }
 
 
 function drawBackground()
 {
-    let ctx = mainCanvas.getContext("2d");
     let numBackgrounds = datasetConfig.backgrounds.length;
     let bgIdx = Math.floor(numBackgrounds * Math.random());
     let imageUrl = datasetConfig.backgrounds[bgIdx].imageUrl;
@@ -234,11 +317,11 @@ function drawBackground()
 
     let img = new Image();
     img.onload = function () {
-        ctx.drawImage(img, 0, 0, mainCanvas.width, mainCanvas.height);
-        drawItems();
-
         document.getElementById("bg-source-link").href = sourceUrl;
+        drawImageScaleToFill(img, mainCanvas);
+        drawItems();
     };
+    img.setAttribute('crossorigin', 'anonymous');
     img.src = imageUrl;
 }
 
@@ -246,6 +329,21 @@ function drawBackground()
 function generate()
 {
     drawBackground();
+}
+
+
+function saveToImage()
+{
+    // Use secondary canvas to stamp image
+    let tmpCanvas = cloneCanvas(mainCanvas);
+    stampImage(tmpCanvas);
+    var img = tmpCanvas.toDataURL("image/png");
+    //document.write('<img src="'+img+'"/>');
+    //window.location = img;
+    var link = document.createElement('a');
+    link.download = 'scatterface.png';
+    link.href = img;
+    link.click();
 }
 
 
@@ -263,9 +361,6 @@ function extractFace(result, srcCanvas, dstCanvas)
     ctx.clearRect(0, 0, sz, sz);
     ctx.drawImage(srcCanvas, x, y, sz, sz, 0, 0, sz, sz);
     return true;
-
-
-
 }
 
 
@@ -296,7 +391,7 @@ function onImageLoad(img)
             });
 
         console.log(result);
-        drawCircle(previewCanvas, result.cx, result.cy, result.r);
+        drawCircle(previewCanvas, result.cx, result.cy, result.r, 10, 'lightgreen');
     }
     else
     {
@@ -310,40 +405,6 @@ function onImageLoad(img)
 
     $('#change-target-modal').modal('show');
 }
-
-
-function readURL(input) 
-{
-    console.log(input.files);
-    if (input.files && input.files[0])
-    {
-        var reader = new FileReader();
-        reader.onload = function(readerEvent)
-        {
-            console.log("onload");
-            var image = new Image();
-            image.onload = (imageEvent) => { onImageLoad(image); };
-            image.src = readerEvent.target.result;
-        }
-        reader.readAsDataURL(input.files[0]);
-        // Clear the value of the input so that we can retrigger "change" event next time
-        input.value = "";
-    }
-}
-
-
-function startChangeTargetWorkflow(input)
-{
-    console.log("Starting workflow");
-    readURL(input);
-}
-
-
-//function foo()
-//{
-//    //targetChanged();
-//    loadFromLocalStorage(targetCanvas);
-//}
 
 
 fetch(DATASET_CONFIG_URL)

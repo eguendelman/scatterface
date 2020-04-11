@@ -16,14 +16,27 @@ function resizeCanvasToDisplaySize(canvas)
 }
 
 
-function drawImageScaleToFit(img, canvas)
+function drawScaledImage(img, canvas, f)
 {
-    let f = Math.min(canvas.width/img.width, canvas.height/img.height);
     let ctx = canvas.getContext("2d");
     let offx = 0.5*(canvas.width - f*img.width);
     let offy = 0.5*(canvas.height - f*img.height);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, offx, offy, f*img.width, f*img.height);
+}
+
+
+function drawImageScaleToFit(img, canvas)
+{
+    let f = Math.min(canvas.width/img.width, canvas.height/img.height);
+    drawScaledImage(img, canvas, f);
+}
+
+
+function drawImageScaleToFill(img, canvas)
+{
+    let f = Math.max(canvas.width/img.width, canvas.height/img.height);
+    drawScaledImage(img, canvas, f);
 }
 
 
@@ -42,13 +55,25 @@ function drawImageToCanvasWithLimitedSize(img, canvas, maxSize)
 }
 
 
-function drawCircle(canvas, x, y, r)
+function drawCircle(canvas, x, y, r, width, style)
 {
     let ctx = canvas.getContext("2d");
     ctx.beginPath();
     ctx.arc(x, y, r, 0, 2*Math.PI, false);
-    ctx.lineWidth = 10;
-    ctx.strokeStyle = 'lightgreen';
+    ctx.lineWidth = width;
+    ctx.strokeStyle = style;
+    ctx.stroke();
+}
+
+
+function drawHLine(canvas, y, width, style)
+{
+    let ctx = canvas.getContext("2d");
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.lineWidth = width;
+    ctx.strokeStyle = style;
     ctx.stroke();
 }
 
@@ -78,3 +103,11 @@ function debugBase64(base64URL){
 }
 
 
+function cloneCanvas(canvas)
+{
+    let newCanvas = document.createElement("canvas");
+    newCanvas.width = canvas.width;
+    newCanvas.height = canvas.height;
+    newCanvas.getContext("2d").drawImage(canvas, 0, 0);
+    return newCanvas;
+}
