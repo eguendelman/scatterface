@@ -103,3 +103,11 @@ function debugBase64(base64URL){
 }
 
 
+function cloneCanvas(canvas)
+{
+    let newCanvas = document.createElement("canvas");
+    newCanvas.width = canvas.width;
+    newCanvas.height = canvas.height;
+    newCanvas.getContext("2d").drawImage(canvas, 0, 0);
+    return newCanvas;
+}

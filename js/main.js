@@ -211,6 +211,27 @@ function prepareOnCompositorCanvas(srcInfo, dstCanvas, withFalloff)
 }
 
 
+// Adds some basic watermark/info stamp to the saved image
+function stampImage(canvas)
+{
+    let ctx = canvas.getContext("2d");
+
+    let s1 = "Generated on scatterface.eg42.net";
+    let numFaces = document.getElementById("face-count-label").innerText;
+    let s2 = `This image contains ${numFaces} faces`;
+
+    let y = canvas.height - 8;
+    ctx.font = "italic 16px Arial";
+    ctx.fillStyle = "black";
+
+    ctx.textAlign = "left";
+    ctx.fillText(s1, 0, y);
+
+    ctx.textAlign = "right";
+    ctx.fillText(s2, canvas.width, y);
+}
+
+
 function overlayLegend()
 {
     let ctx = mainCanvas.getContext("2d");
@@ -313,7 +334,10 @@ function generate()
 
 function saveToImage()
 {
-    var img = mainCanvas.toDataURL("image/png");
+    // Use secondary canvas to stamp image
+    let tmpCanvas = cloneCanvas(mainCanvas);
+    stampImage(tmpCanvas);
+    var img = tmpCanvas.toDataURL("image/png");
     //document.write('<img src="'+img+'"/>');
     //window.location = img;
     var link = document.createElement('a');
