@@ -1,7 +1,7 @@
 var mainCanvas = document.getElementById("main-canvas");
-var previewCanvas = document.getElementById("preview-canvas");
 
 var compositorCanvas = document.createElement("canvas");
+var compositorCanvas2 = document.createElement("canvas");
 var targetCanvas = document.createElement("canvas");
 
 var STORAGE_KEY = "targetImageData";
@@ -23,6 +23,13 @@ function getDrawnItemSize()
     else if (difficultyLevel == 2) { factor = 20; }
     else if (difficultyLevel == 3) { factor = 35; }
     else if (difficultyLevel == 4) { factor = 45; }
+    return mainCanvas.width/factor;
+}
+
+
+function getLegendSize()
+{
+    let factor = 10;
     return mainCanvas.width/factor;
 }
 
@@ -54,26 +61,18 @@ function initPage()
 
     el = document.getElementById(`dif-${difficultyLevel}`);
     el.checked = true;
-    el.classList.add("active");
 }
 
 
 function refreshLayout()
 {
     resizeCanvasToDisplaySize(mainCanvas);
-    resizeCanvasToDisplaySize(previewCanvas);
 }
 
 
 function targetChanged()
 {
-    let canvas = previewCanvas;
-    let sz = Math.min(canvas.width, canvas.height);
-    //canvas.width = sz;
-    //canvas.height = sz;
-    console.log("Drawing image from target canvas");
-    console.log(sz);
-    canvas.getContext("2d").drawImage(targetCanvas, (canvas.width-sz)/2, 0, sz, sz);
+    // This used to do something but right now nothing is needed here... 
 }
 
 
@@ -118,10 +117,24 @@ function loadSavedData()
 }
 
 
-function getLocationsPoisson(width, height, radius)
+function circlesOverlap(x1, y1, r1, x2, y2, r2)
+{
+    let dx = x2-x1;
+    let dy = y2-y1;
+    let lensqr = dx*dx + dy*dy;
+    let r12sqr = (r1+r2)*(r1+r2);
+    return lensqr < r12sqr;
+}
+
+
+// extraMargins is used in case the canvas is larger than just the bg image, which is
+// the case if we draw the legend overlay on it with extra margins on bottom.
+function getLocationsPoisson(width, height, radius, extraMargins, excludedCircle)
 {
     let k = 500;
-    let margin = radius;
+    // This extra margin is so that we get nicer distributed points around boundaries
+    // We subtract it later
+    let margin = radius; 
     let myPoisson = new PoissonDisc(width+2*margin, height+2*margin, 2*radius, k, 2);
     myPoisson.run();
     console.log(myPoisson);
@@ -131,8 +144,13 @@ function getLocationsPoisson(width, height, radius)
         let pt = myPoisson.points[i];
         pt.px -= margin;
         pt.py -= margin;
-        if (radius < pt.px && pt.px < width-radius && radius < pt.py && pt.py < height-radius) {
-            locs.push({cx: pt.px, cy: pt.py});
+        if (radius+extraMargins.l < pt.px && pt.px < width-radius-extraMargins.r && 
+            radius+extraMargins.t < pt.py && pt.py < height-radius-extraMargins.b) 
+        {
+            if (excludedCircle==null || !circlesOverlap(pt.px, pt.py, radius, excludedCircle.cx, excludedCircle.cy, excludedCircle.r))
+            {
+                locs.push({cx: pt.px, cy: pt.py});
+            }
         }
     }
     return locs;
@@ -155,16 +173,25 @@ function createFalloff(ctx, sz)
 
 
 // srcInfo is an object with fields defining the source image/canvas and offsets
-function prepareOnCompositorCanvas(srcInfo, dstCanvas)
+function prepareOnCompositorCanvas(srcInfo, dstCanvas, withFalloff)
 {
     let sz = dstCanvas.width;
     let ctx = dstCanvas.getContext("2d");
     ctx.clearRect(0, 0, sz, sz);
 
-    let g = createFalloff(ctx, sz);
-
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, sz, sz);
+    if (withFalloff)
+    {
+        let g = createFalloff(ctx, sz);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, sz, sz);
+    }
+    else
+    {
+        ctx.beginPath();
+        ctx.arc(sz/2, sz/2, sz/2, 0, 2*Math.PI, false);
+        ctx.fillStyle = "black";
+        ctx.fill();
+    }
 
     ctx.globalCompositeOperation="source-in";
     if (srcInfo.sx != undefined) {
@@ -176,6 +203,48 @@ function prepareOnCompositorCanvas(srcInfo, dstCanvas)
 }
 
 
+function overlayLegend()
+{
+    let ctx = mainCanvas.getContext("2d");
+
+    let r = getLegendSize()/2;
+    let cx = mainCanvas.width/2;
+    let cy = mainCanvas.height-r;
+    let circle = { cx: cx, cy: cy, r: r };
+
+    let bottomMargin = circle.r/2;
+    ctx.clearRect(0, mainCanvas.height-bottomMargin, mainCanvas.width, bottomMargin);
+
+    compositorCanvas2.width = 2*circle.r;
+    compositorCanvas2.height = 2*circle.r;
+
+    let srcInfo = {img: targetCanvas};
+    prepareOnCompositorCanvas(srcInfo, compositorCanvas2, false);
+    ctx.drawImage(compositorCanvas2, circle.cx - circle.r, circle.cy - circle.r);
+
+    ctx.beginPath();
+    ctx.arc(circle.cx, circle.cy, circle.r, 0, 2*Math.PI, false);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = 'white';
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(circle.cx, circle.cy, circle.r-4, 0, 2*Math.PI, false);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = 'red';
+    ctx.stroke();
+
+    //ctx.beginPath();
+    //ctx.arc(circle.cx, circle.cy, circle.r-8, 0, 2*Math.PI, false);
+    //ctx.lineWidth = 4;
+    //ctx.strokeStyle = 'white';
+    //ctx.stroke();
+
+    let legendInfo = { circle: circle, extraMargins: { l: 0, r: 0, t: 0, b: bottomMargin } };
+    return legendInfo;
+}
+
+
 function drawItems()
 {
     let ctx = mainCanvas.getContext("2d");
@@ -184,12 +253,14 @@ function drawItems()
     compositorCanvas.width = sz;
     compositorCanvas.height = sz;
 
+    let legendInfo = overlayLegend();
+
     let img = new Image();
     img.onload = function () {
         // assumes the mosaic is a horizontal stacking (no padding) of square images
         let srcItemSize = img.height;
         let numItems = img.width / srcItemSize;
-        let locs = getLocationsPoisson(mainCanvas.width, mainCanvas.height, sz/2);
+        let locs = getLocationsPoisson(mainCanvas.width, mainCanvas.height, sz/2, legendInfo.extraMargins, legendInfo.circle);
 
         document.getElementById("face-count-label").innerText = locs.length;
 
@@ -208,7 +279,7 @@ function drawItems()
                 let itemIdx = Math.floor(Math.random() * numItems);
                 srcInfo = {img: img, sx: itemIdx*srcItemSize, sy: 0, swidth: srcItemSize, sheight: srcItemSize};
             }
-            prepareOnCompositorCanvas(srcInfo, compositorCanvas);
+            prepareOnCompositorCanvas(srcInfo, compositorCanvas, true);
             ctx.drawImage(compositorCanvas, x, y);
         }
     };
