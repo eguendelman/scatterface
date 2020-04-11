@@ -18,6 +18,10 @@ var DATASET_CONFIG_URL = "config/backgrounds.json"
 var datasetConfig = null;
 var difficultyLevel = parseInt(localStorage.getItem(STORAGE_KEY_DIFFICULTY) || "1");
 
+// defines the sources for target and distractor faces
+var distractorSrcInfos = null;
+var targetSrcInfo = null;
+
 
 function getDrawnItemSize()
 {
@@ -80,7 +84,7 @@ function refreshLayout()
 
 function targetChanged()
 {
-    // This used to do something but right now nothing is needed here... 
+    targetSrcInfo = { img: targetCanvas };
 }
 
 
@@ -121,6 +125,12 @@ function loadSavedData()
     if(loadFromLocalStorage(targetCanvas))
     {
         targetChanged();
+    }
+    else
+    {
+        // This will indicate (for later) that we don't have a target yet
+        targetCanvas.width = 0;
+        targetCanvas.height = 0;
     }
 }
 
@@ -232,7 +242,7 @@ function stampImage(canvas)
 }
 
 
-function overlayLegend()
+function overlayLegend(srcInfo)
 {
     let ctx = mainCanvas.getContext("2d");
 
@@ -253,7 +263,6 @@ function overlayLegend()
     compositorCanvas2.width = 2*circle.r;
     compositorCanvas2.height = 2*circle.r;
 
-    let srcInfo = {img: targetCanvas};
     prepareOnCompositorCanvas(srcInfo, compositorCanvas2, false);
     ctx.drawImage(compositorCanvas2, circle.cx - circle.r, circle.cy - circle.r);
 
@@ -265,6 +274,12 @@ function overlayLegend()
 }
 
 
+function updateFaceCountLabel(n)
+{
+    document.getElementById("face-count-label").innerText = n;
+}
+
+
 function drawItems()
 {
     let ctx = mainCanvas.getContext("2d");
@@ -273,35 +288,62 @@ function drawItems()
     compositorCanvas.width = sz;
     compositorCanvas.height = sz;
 
-    let legendInfo = overlayLegend();
+    // Sort of a hack for now... fill targetCanvas with the last face in the list, in case no target chosen yet
+    let selectedDistractorSrcInfos = Array.from(distractorSrcInfos); // shallow copy
+    let selectedTargetSrcInfo = null;
+    if (targetSrcInfo == null) {
+        console.log("here");
+        let itemIdx = Math.floor(Math.random() * selectedDistractorSrcInfos.length);
+        selectedTargetSrcInfo = selectedDistractorSrcInfos.splice(itemIdx, 1)[0];
+    }
+    else
+    {
+        selectedTargetSrcInfo = targetSrcInfo;
+    }
 
+
+    let legendInfo = overlayLegend(selectedTargetSrcInfo);
+
+
+    let locs = getLocationsPoisson(mainCanvas.width, mainCanvas.height, sz/2, legendInfo.extraMargins, legendInfo.circle);
+    updateFaceCountLabel(locs.length);
+
+    // location at index `targetPlacementIdx` will be the target image
+    let targetPlacementIdx = Math.floor(locs.length * Math.random());
+    for(let i=0; i<locs.length; i++)
+    {
+        // locs.cx/cy represent the center, so we adjust for that
+        let x = locs[i].cx - sz/2;
+        let y = locs[i].cy - sz/2;
+
+        let srcInfo = null;
+        if (i == targetPlacementIdx) {
+            srcInfo = selectedTargetSrcInfo;
+        } else {
+            let itemIdx = Math.floor(Math.random() * selectedDistractorSrcInfos.length);
+            srcInfo = selectedDistractorSrcInfos[itemIdx];
+        }
+        prepareOnCompositorCanvas(srcInfo, compositorCanvas, true);
+        ctx.drawImage(compositorCanvas, x, y);
+    }
+}
+
+
+function loadAndDrawItems()
+{
     let img = new Image();
     img.onload = function () {
         // assumes the mosaic is a horizontal stacking (no padding) of square images
         let srcItemSize = img.height;
         let numItems = img.width / srcItemSize;
-        let locs = getLocationsPoisson(mainCanvas.width, mainCanvas.height, sz/2, legendInfo.extraMargins, legendInfo.circle);
 
-        document.getElementById("face-count-label").innerText = locs.length;
-
-        // location at index `targetPlacementIdx` will be the target image
-        let targetPlacementIdx = Math.floor(locs.length * Math.random());
-        for(let i=0; i<locs.length; i++)
-        {
-            // locs.cx/cy represent the center, so we adjust for that
-            let x = locs[i].cx - sz/2;
-            let y = locs[i].cy - sz/2;
-
-            let srcInfo = null;
-            if (i == targetPlacementIdx) {
-                srcInfo = {img: targetCanvas};
-            } else {
-                let itemIdx = Math.floor(Math.random() * numItems);
-                srcInfo = {img: img, sx: itemIdx*srcItemSize, sy: 0, swidth: srcItemSize, sheight: srcItemSize};
-            }
-            prepareOnCompositorCanvas(srcInfo, compositorCanvas, true);
-            ctx.drawImage(compositorCanvas, x, y);
+        // Define the source info structs for the images in the mosaic 
+        distractorSrcInfos = Array();
+        for(let i=0; i<numItems; i++) {
+            distractorSrcInfos.push({img: img, sx: i*srcItemSize, sy: 0, swidth: srcItemSize, sheight: srcItemSize});
         }
+
+        drawItems();
     };
     img.setAttribute('crossorigin', 'anonymous');
     img.src = 'images/mosaic.jpg';
@@ -319,7 +361,7 @@ function drawBackground()
     img.onload = function () {
         document.getElementById("bg-source-link").href = sourceUrl;
         drawImageScaleToFill(img, mainCanvas);
-        drawItems();
+        loadAndDrawItems();
     };
     img.setAttribute('crossorigin', 'anonymous');
     img.src = imageUrl;
