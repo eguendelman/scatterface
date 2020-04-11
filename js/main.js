@@ -7,9 +7,11 @@ var targetCanvas = document.createElement("canvas");
 var STORAGE_KEY = "targetImageData";
 var STORAGE_KEY_DIFFICULTY = "difficultyLevel";
 
+var FACE_DETECT_MAX_IMAGE_SIZE = 2048;
+var FACE_DETECT_ENLARGE_FACTOR = 1.1;
+
 var SOURCE_ITEM_SIZE = 256;
 var DATASET_CONFIG_URL = "config/backgrounds.json"
-var FACE_REGION_ENLARGE_FACTOR = 1.1;
 
 var BOTTOM_MARGIN = 100;
 
@@ -45,27 +47,11 @@ function setDifficultyLevel(level)
 }
 
 
-function resizeCanvasToDisplaySize(canvas) {
-   // look up the size the canvas is being displayed
-   const width = canvas.clientWidth;
-   const height = canvas.clientHeight;
-
-   // If it's resolution does not match change it
-   if (canvas.width !== width || canvas.height !== height) {
-     canvas.width = width;
-     canvas.height = height;
-     return true;
-   }
-
-   return false;
-}
-
-
 function initPage()
 {
-    let el = document.getElementById("file-input");
+    let el = document.getElementById("change-target");
     if (el != null) {
-        el.addEventListener("change", (e) => { readURL(e.target); });
+        el.addEventListener("change", (e) => { startChangeTargetWorkflow(e.target); });
     }
 
     el = document.getElementById("refresh-button");
@@ -260,6 +246,7 @@ function drawItems()
     img.src = 'images/mosaic.jpg';
 }
 
+
 function drawBackground()
 {
     let ctx = mainCanvas.getContext("2d");
@@ -278,32 +265,100 @@ function drawBackground()
     img.src = imageUrl;
 }
 
+
 function generate()
 {
     drawBackground();
 }
 
+
+function extractFace(result, srcCanvas, dstCanvas)
+{
+    let x = result.cx - result.r;
+    let y = result.cy - result.r;
+    let sz = 2*result.r;
+
+    dstCanvas.width = sz;
+    dstCanvas.height = sz;
+
+    // Draw extracted face onto this new canvas
+    let ctx = dstCanvas.getContext("2d");
+    ctx.clearRect(0, 0, sz, sz);
+    ctx.drawImage(srcCanvas, x, y, sz, sz, 0, 0, sz, sz);
+    return true;
+
+
+
+}
+
+
+function onImageLoad(img)
+{
+    let tmpCanvas = document.createElement("canvas");
+    let previewCanvas = document.getElementById("change-target-image-preview-canvas");
+
+    drawImageToCanvasWithLimitedSize(img, tmpCanvas, FACE_DETECT_MAX_IMAGE_SIZE);
+    drawImageToCanvasWithLimitedSize(img, previewCanvas, FACE_DETECT_MAX_IMAGE_SIZE);
+
+    let result = findFaceInCanvas(tmpCanvas, FACE_DETECT_ENLARGE_FACTOR);
+
+    if (result != null)
+    {
+        let el = document.getElementById("detection-result-alert");
+        el.classList.remove("alert-warning");
+        el.classList.add("alert-success");
+        el.innerText = "Found face";
+
+        $('#change-target-accept')
+            .prop('disabled',false)
+            .on('click', function(e) {
+                extractFace(result, tmpCanvas, targetCanvas);
+                saveToLocalStorage(targetCanvas);
+                targetChanged();
+                generate();
+            });
+
+        console.log(result);
+        drawCircle(previewCanvas, result.cx, result.cy, result.r);
+    }
+    else
+    {
+        let el = document.getElementById("detection-result-alert");
+        el.classList.remove("alert-success");
+        el.classList.add("alert-danger");
+        el.innerText = "Could not find face";
+
+        $('#change-target-accept').prop('disabled',true);
+    }
+
+    $('#change-target-modal').modal('show');
+}
+
+
 function readURL(input) 
 {
+    console.log(input.files);
     if (input.files && input.files[0])
     {
         var reader = new FileReader();
         reader.onload = function(readerEvent)
         {
+            console.log("onload");
             var image = new Image();
-            image.onload = function(imageEvent)
-            {
-                let success = extractFace(image, targetCanvas, FACE_REGION_ENLARGE_FACTOR);
-                if (success) {
-                    saveToLocalStorage(targetCanvas);
-                    targetChanged();
-                }
-                generate();
-            }
+            image.onload = (imageEvent) => { onImageLoad(image); };
             image.src = readerEvent.target.result;
         }
         reader.readAsDataURL(input.files[0]);
+        // Clear the value of the input so that we can retrigger "change" event next time
+        input.value = "";
     }
+}
+
+
+function startChangeTargetWorkflow(input)
+{
+    console.log("Starting workflow");
+    readURL(input);
 }
 
 

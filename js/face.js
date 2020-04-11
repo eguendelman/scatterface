@@ -47,7 +47,7 @@ function drawResizedImage(img)
 }
 
 
-function findFaceInCanvas(canvas)
+function findFaceInCanvas(canvas, enlargeFactor)
 {
     params = {
         "shiftfactor": 0.1, // move the detection window by 10% of its size
@@ -76,44 +76,13 @@ function findFaceInCanvas(canvas)
     // TODO: fix this silly threshold
     if(dets.length > 0 && dets[0][3]>1.0)
     {
-        result = {cx: dets[0][1], cy: dets[0][0], r: dets[0][2]/2};
+        result = {cx: dets[0][1], cy: dets[0][0], r: enlargeFactor*dets[0][2]/2};
         return result;
     }
     else
     {
         return null;
     }
-}
-
-// Get face image data (at arbitrary originally extracted size)
-function extractFace(img, dstCanvas, enlargeFactor)
-{
-    // Draw the image onto a canvas (with possible resizing)
-    let srcCanvas = drawResizedImage(img);
-
-    // Run face detection on canvas
-    let result = findFaceInCanvas(srcCanvas);
-    if (result==null)
-    { 
-        return false;
-    }
-
-    console.log("findFace returned:");
-    console.log(result);
-
-    let rf = enlargeFactor * result.r;
-    let x = result.cx - rf;
-    let y = result.cy - rf;
-    let sz = 2*rf;
-
-    dstCanvas.width = sz;
-    dstCanvas.height = sz;
-
-    // Draw extracted face onto this new canvas
-    let ctx = dstCanvas.getContext("2d");
-    ctx.clearRect(0, 0, sz, sz);
-    ctx.drawImage(srcCanvas, x, y, sz, sz, 0, 0, sz, sz);
-    return true;
 }
 
 

@@ -15,14 +15,12 @@
 
       <div class="row no-gutters">
         <div class="col-12 col-md-5 text-left">
-          <label class="btn btn-default btn-primary">Change Photo<input type="file" id="file-input" hidden></label>
+          <label class="btn btn-default btn-primary">Change Target Face<input type="file" id="change-target" hidden></label>
         </div>
         <div class="col-12 col-md-2 text-center">
           <canvas id="preview-canvas" class="h-100 w-100"></canvas>
         </div>
         <div class="col-12 col-md-5 text-right">
-          <button id="refresh-button" type="button" class="btn btn-primary">Refresh</button>
-
           <div class="btn-group btn-group-toggle" data-toggle="buttons">
             <label class="btn btn-secondary">
               <input type="radio" name="options" id="dif-1" onClick="setDifficultyLevel(1);"> Easy
@@ -37,6 +35,8 @@
               <input type="radio" name="options" id="dif-4" onClick="setDifficultyLevel(4);"> Insane
             </label>
           </div>
+
+          <button id="refresh-button" type="button" class="btn btn-primary">Refresh</button>
 
           <!--<button type="button" class="btn btn-info" onClick="foo();">test</button>-->
 
@@ -76,6 +76,37 @@
       </div>
     </div>
 
+
+    <!-- photo/face confirm dialog -->
+    <div class="modal" id="change-target-modal" tabindex="-1" role="dialog" aria-labelledby="change-target-modal-title" aria-hidden="true">
+      <div class="modal-dialog text-left" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="change-target-modal-title">Change Target Photo</h5>
+          </div>
+          <div class="modal-body">
+            <div class="container text-center">
+              <div class="row">
+                <div class="col">
+                  <canvas id="change-target-image-preview-canvas" class="w-100"></canvas>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col">
+                  <div id="detection-result-alert" class="alert" role="alert"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button id="change-target-cancel" type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            <button id="change-target-accept" type="button" class="btn btn-success" data-dismiss="modal">Accept</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
     <script src="https://use.fontawesome.com/b14b464e3d.js"></script>
     <script src="js/thirdparty/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
     <script src="js/thirdparty/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
@@ -83,6 +114,7 @@
 
     <script src="js/thirdparty/pico.js"></script>
     <script src="js/thirdparty/poisson-disc.js"></script>
+    <script src="js/utils.js"></script>
     <script src="js/face.js"></script>
     <script src="js/main.js"></script>
   </body>
