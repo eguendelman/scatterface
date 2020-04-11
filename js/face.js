@@ -73,7 +73,8 @@ function findFaceInCanvas(canvas)
     dets = pico.cluster_detections(dets, 0.2); // set IoU threshold to 0.2
     console.log(dets);
 
-    if(dets.length > 0 && dets[0][3]>50.0)
+    // TODO: fix this silly threshold
+    if(dets.length > 0 && dets[0][3]>1.0)
     {
         result = {cx: dets[0][1], cy: dets[0][0], r: dets[0][2]/2};
         return result;
