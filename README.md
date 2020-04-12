@@ -2,7 +2,7 @@
 
 ## Live on GitHub Pages
 
-See it live [here](https://eguendelman.github.io/scatterface/)
+See it live [here](https://scatterface.eg42.net)
 
 ## Description
 
