@@ -4,6 +4,7 @@
 
     <!-- bootstrap -->
     <link rel="stylesheet" href="css/thirdparty/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/style.css">
   </head>
   <body>
     <div class="container-fluid p-0 h-100">
@@ -14,10 +15,10 @@
       </div>
 
       <div class="row no-gutters">
-        <div class="col col-md-4 text-left">
-          <label class="btn btn-default btn-primary">Change Target Face<input type="file" id="change-target-file-input" hidden></label>
+        <div class="col col-md-2 text-left">
+          <label class="btn btn-default btn-primary"><i class="fa fa-bullseye"></i> Change Target<input type="file" id="change-target-file-input" hidden></label>
         </div>
-        <div class="col col-md-4 text-center">
+        <div class="col col-md-8 text-center">
           <div class="btn-group btn-group-toggle" data-toggle="buttons">
             <label class="btn btn-secondary">
               <input type="radio" name="options" id="dif-1" onClick="setDifficultyLevel(1);"> Easy
@@ -34,7 +35,7 @@
           </div>
           <button id="refresh-button" type="button" class="btn btn-primary"><i class="fa fa-repeat"></i> Another</button>
         </div>
-        <div class="col col-md-4 text-right">
+        <div class="col col-md-2 text-right">
           <button id="save-button" type="button" class="btn btn-primary"><i class="fa fa-download"></i> Save Image</button>
 
           <!--
@@ -62,18 +63,18 @@
       -->
       </div>
 
-      <div class="footer text-muted small">
-          Your image is <i>not</i> uploaded anywhere.
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          Created by Eran Guendelman.
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          <a href="https://github.com/eguendelman/scatterface"><span class="fa fa-github"></span> Source code</a>.
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          Background from <a href="#" id="bg-source-link">Unsplash</a>.
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          Faces from <a href="https://www.thispersondoesnotexist.com" id="bg-source-link">thispersondoesnotexist</a>.
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          This image contains <span id="face-count-label"></span> faces.
+      <div class="footer text-muted my-footer">
+          Your image is <i>not</i> uploaded anywhere
+          <b>|</b>
+          Created by Eran Guendelman
+          <b>|</b>
+          <a href="https://github.com/eguendelman/scatterface"><span class="fa fa-github"></span> Source code</a>
+          <b>|</b>
+          Background from <a href="#" id="bg-source-link">Unsplash</a>
+          <b>|</b>
+          Faces from <a href="https://www.thispersondoesnotexist.com" id="bg-source-link">thispersondoesnotexist</a>
+          <b>|</b>
+          This image contains <span id="face-count-label"></span> faces
       </div>
     </div>
 

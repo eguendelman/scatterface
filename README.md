@@ -11,9 +11,6 @@ See it live [here](https://eguendelman.github.io/scatterface/)
 
 ## TODO
 
-* why have to reload twice sometimes to see the custom target image
-* ability to save/export as image
-
 ### Ideas for later...
 
 * consider DPI when determining sizes for difficulty levels
@@ -25,6 +22,8 @@ See it live [here](https://eguendelman.github.io/scatterface/)
 * additional datasets (e.g. Peppa Pig faces, emoji)
 * downselect distractor faces to those that are most similar to the target face ("hard mode")
 * nicer background removal (in place of radial gradient)
+* make the main canvas zoomable and scrollable while keeping bottom toolbar fixed
+* faces appear pixelated on ipad when small
 
 ## Credits
 
