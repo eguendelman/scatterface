@@ -8,12 +8,15 @@
   </head>
   <body>
     <div class="container-fluid p-0 h-100">
+
+      <!-- row -->
       <div class="row no-gutters" style="height: 90%;">
         <div class="col w-100">
           <canvas id="main-canvas" class="h-100 w-100"></canvas>
         </div>
       </div>
 
+      <!-- row -->
       <div class="row no-gutters">
         <div class="col col-md-2 text-left">
           <label class="btn btn-default btn-primary"><i class="fa fa-bullseye"></i> Change Target<input type="file" id="change-target-file-input" hidden></label>
@@ -37,33 +40,12 @@
         </div>
         <div class="col col-md-2 text-right">
           <button id="save-button" type="button" class="btn btn-primary"><i class="fa fa-download"></i> Save Image</button>
-
-          <!--
-          <button id="about-button" type="button" class="btn btn-info" data-toggle="modal" data-target="#aboutModal">About <span class="fa fa-github"></span></button>
-
-          <div class="modal" id="aboutModal" tabindex="-1" role="dialog" aria-labelledby="aboutModalLabel" aria-hidden="true">
-            <div class="modal-dialog text-left" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="aboutModalLabel">About ScatterFace</h5>
-                </div>
-                <div class="modal-body">
-                  <p>
-                    <a href="https://github.com/eguendelman/scatterface">github</a>
-                  </p>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
+          <button id="about-button" type="button" class="btn btn-primary" data-toggle="modal" data-target="#aboutModal"><i class="fa fa-info-circle force-parent-lh"></i></button>
         </div>
-      -->
       </div>
 
-      <div class="footer text-muted my-footer">
+      <div class="row no-gutters text-muted my-footer">
+        <div class="col col-md-10 text-left">
           Your image is <i>not</i> uploaded anywhere
           <b>|</b>
           Created by Eran Guendelman
@@ -73,18 +55,19 @@
           Background from <a href="#" id="bg-source-link">Unsplash</a>
           <b>|</b>
           Faces from <a href="https://www.thispersondoesnotexist.com" id="bg-source-link">thispersondoesnotexist</a>
-          <b>|</b>
+        </div>
+        <div class="col col-md-2 text-right">
           This image contains <span id="face-count-label"></span> faces
+        </div>
       </div>
     </div>
-
 
     <!-- photo/face confirm dialog -->
     <div class="modal" id="change-target-modal" tabindex="-1" role="dialog" aria-labelledby="change-target-modal-title" aria-hidden="true">
       <div class="modal-dialog text-left" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="change-target-modal-title">Change Target Photo</h5>
+            <h5 class="modal-title" id="change-target-modal-title">Changing Target...</h5>
           </div>
           <div class="modal-body">
             <div class="container text-center">
@@ -108,6 +91,34 @@
       </div>
     </div>
 
+
+          <div class="modal" id="aboutModal" tabindex="-1" role="dialog" aria-labelledby="aboutModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg text-left" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="aboutModalLabel">About</h5>
+                </div>
+                <div class="modal-body">
+                  <ul>
+                    <li>A small open source project made to keep the kids busy during COVID-19.</li>
+                    <li>Created by Eran Guendelman.</li>
+                    <li>Source code available on <a href="https://github.com/eguendelman/scatterface">github</a>.</li>
+                    <li><b>Instructions</b>
+                      <ul>
+                        <li>The target face (shown in red circle) appears once among the scattered faces.  Can you find it?</li>
+                        <li>Select <b>Change Target</b> to customize the target face.</li>
+                        <li>Your images are <i>not uploaded anywhere</i>.</li>
+                        <li>Select <b>Save Image</b> to download the result as an image you can share.</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Dismiss</button>
+                </div>
+              </div>
+            </div>
+          </div>
 
     <script src="js/thirdparty/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
     <script src="js/thirdparty/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>

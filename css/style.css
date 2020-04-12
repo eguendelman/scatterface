@@ -2,3 +2,9 @@
 {
   font-size: 0.7em;
 }
+
+/* https://stackoverflow.com/questions/37924034/height-of-standalone-font-awesome-icon-in-bootstrap-button */
+.force-parent-lh 
+{
+  line-height: inherit !important;
+}
