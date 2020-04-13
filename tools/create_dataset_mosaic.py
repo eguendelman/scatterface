@@ -1,4 +1,4 @@
-import os
+import os, argparse
 from PIL import Image
 
 def create_mosaic_strip(images):
@@ -20,15 +20,20 @@ def create_mosaic_strip(images):
 #############################################################################
 # MAIN
 #############################################################################
-output_filename = "../images/mosaic.jpg"
+parser = argparse.ArgumentParser()
+parser.add_argument("-n", "--num", default=3, type=int)
+parser.add_argument("--size", default=256, type=int)
+parser.add_argument("--quality", default=80, type=int)
+parser.add_argument("-O", "--output", default="../images/mosaic.jpg")
+args = parser.parse_args()
 
 filenames = os.listdir("data")
 images = []
 for fn in filenames:
     img = Image.open(f"data/{fn}")
-    img = img.resize((256,256), resample=Image.LANCZOS)
+    img = img.resize((args.size,args.size), resample=Image.LANCZOS)
     images.append(img)
 
 mosaic_img = create_mosaic_strip(images)
 #mosaic_img.show()
-mosaic_img.save(output_filename)
+mosaic_img.save(args.output, quality=args.quality)
