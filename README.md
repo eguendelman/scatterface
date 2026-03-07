@@ -12,7 +12,7 @@ See it live [here](https://scatterface.eg42.net)
 ## Credits
 
 * **Concept** of personalized face search also available in print form here: https://www.putmeinthestory.com/ (look for "Find Me If You Can" book series)
-* **Backgrounds** come from https://unsplash.com/ (hand selected some "busy" images)
+* **Backgrounds** come from https://picsum.photos/ (hand selected some "busy" images)
 * **Faces** come from https://www.thispersondoesnotexist.com/
   * https://generated.photos/faces is another interesting resource but not used
 * **Face Detection** uses https://github.com/tehnokv/picojs
