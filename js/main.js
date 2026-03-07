@@ -355,10 +355,9 @@ function loadAndDrawItems()
 
 function drawBackground()
 {
-    let numBackgrounds = datasetConfig.backgrounds.length;
-    let bgIdx = Math.floor(numBackgrounds * Math.random());
-    let imageUrl = datasetConfig.backgrounds[bgIdx].imageUrl;
-    let sourceUrl = datasetConfig.backgrounds[bgIdx].sourceUrl;
+    let ids = datasetConfig.picsum_ids;
+    let id = ids[Math.floor(ids.length * Math.random())];
+    let imageUrl = `https://picsum.photos/id/${id}/1920/1080`;
 
     let img = new Image();
     img.onload = function () {
