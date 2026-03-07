@@ -362,7 +362,6 @@ function drawBackground()
 
     let img = new Image();
     img.onload = function () {
-        document.getElementById("bg-source-link").href = sourceUrl;
         drawImageScaleToFill(img, mainCanvas);
         loadAndDrawItems();
     };
