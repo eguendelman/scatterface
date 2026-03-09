@@ -31,7 +31,8 @@
       <!-- row -->
       <div class="row no-gutters">
         <div class="col col-md-2 text-left">
-          <label class="btn btn-default btn-primary"><i class="fa fa-bullseye"></i> Change Target<input type="file" id="change-target-file-input" hidden></label>
+          <button type="button" class="btn btn-default btn-primary" data-toggle="modal" data-target="#choose-source-modal"><i class="fa fa-bullseye"></i> Change Target</button>
+          <input type="file" id="change-target-file-input" hidden>
         </div>
         <div class="col col-md-8 text-center">
           <div class="btn-group btn-group-toggle" data-toggle="buttons">
@@ -103,6 +104,42 @@
       </div>
     </div>
 
+
+    <!-- choose source dialog -->
+    <div class="modal" id="choose-source-modal" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Change Target</h5>
+          </div>
+          <div class="modal-body text-center">
+            <button id="choose-webcam-btn" type="button" class="btn btn-primary btn-lg btn-block mb-3"><i class="fa fa-camera"></i> Take Photo</button>
+            <button id="choose-upload-btn" type="button" class="btn btn-primary btn-lg btn-block"><i class="fa fa-upload"></i> Upload Image</button>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- webcam capture dialog -->
+    <div class="modal" id="webcam-modal" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Take Photo</h5>
+          </div>
+          <div class="modal-body text-center">
+            <video id="webcam-video" class="w-100" autoplay playsinline></video>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            <button id="webcam-capture-btn" type="button" class="btn btn-success"><i class="fa fa-camera"></i> Capture</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
           <div class="modal" id="aboutModal" tabindex="-1" role="dialog" aria-labelledby="aboutModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg text-left" role="document">

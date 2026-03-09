@@ -52,12 +52,77 @@ function setDifficultyLevel(level)
 }
 
 
+var webcamStream = null;
+
+function stopWebcam()
+{
+    if (webcamStream) {
+        webcamStream.getTracks().forEach(function(track) { track.stop(); });
+        webcamStream = null;
+    }
+    var video = document.getElementById("webcam-video");
+    if (video) { video.srcObject = null; }
+}
+
 function initPage()
 {
+    // File input handler (unchanged)
     let el = document.getElementById("change-target-file-input");
     if (el != null) {
         el.onchange = function (e) {
           loadImage(e.target.files[0], onImageLoad, { maxWidth: FACE_DETECT_MAX_IMAGE_SIZE, orientation: true, crossOrigin: true });
+        }
+    }
+
+    // "Upload Image" button in choose-source modal
+    el = document.getElementById("choose-upload-btn");
+    if (el != null) {
+        el.onclick = function() {
+            $('#choose-source-modal').modal('hide');
+            document.getElementById("change-target-file-input").click();
+        }
+    }
+
+    // "Take Photo" button in choose-source modal
+    el = document.getElementById("choose-webcam-btn");
+    if (el != null) {
+        el.onclick = function() {
+            $('#choose-source-modal').modal('hide');
+            $('#webcam-modal').modal('show');
+        }
+    }
+
+    // Start webcam when modal opens
+    $('#webcam-modal').on('shown.bs.modal', function() {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+        .then(function(stream) {
+            webcamStream = stream;
+            var video = document.getElementById("webcam-video");
+            video.srcObject = stream;
+        })
+        .catch(function(err) {
+            console.error("Webcam error:", err);
+            alert("Could not access webcam: " + err.message);
+            $('#webcam-modal').modal('hide');
+        });
+    });
+
+    // Stop webcam when modal closes
+    $('#webcam-modal').on('hidden.bs.modal', function() {
+        stopWebcam();
+    });
+
+    // Capture button
+    el = document.getElementById("webcam-capture-btn");
+    if (el != null) {
+        el.onclick = function() {
+            var video = document.getElementById("webcam-video");
+            var captureCanvas = document.createElement("canvas");
+            captureCanvas.width = video.videoWidth;
+            captureCanvas.height = video.videoHeight;
+            captureCanvas.getContext("2d").drawImage(video, 0, 0);
+            $('#webcam-modal').modal('hide');
+            onImageLoad(captureCanvas);
         }
     }
 
